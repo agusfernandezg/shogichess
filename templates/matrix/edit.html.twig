@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit Matrix{% endblock %}
+
+{% block body %}
+    <h1>Edit Matrix</h1>
+
+    {{ include('matrix/_form.html.twig', {'button_label': 'Update'}) }}
+
+    <a href="{{ path('matrix_index') }}">back to list</a>
+
+    {{ include('matrix/_delete_form.html.twig') }}
+{% endblock %}

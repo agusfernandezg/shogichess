@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New Move{% endblock %}
+
+{% block body %}
+    <h1>Create new Move</h1>
+
+    {{ include('move/_form.html.twig') }}
+
+    <a href="{{ path('move_index') }}">back to list</a>
+{% endblock %}

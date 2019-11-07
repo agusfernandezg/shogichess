@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Matrix index{% endblock %}
+
+{% block body %}
+    <h1>Matrix index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Row</th>
+                <th>Col</th>
+                <th>Type</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for matrix in matrices %}
+            <tr>
+                <td>{{ matrix.id }}</td>
+                <td>{{ matrix.name }}</td>
+                <td>{{ matrix.row }}</td>
+                <td>{{ matrix.col }}</td>
+                <td>{{ matrix.type }}</td>
+                <td>
+                    <a href="{{ path('matrix_show', {'id': matrix.id}) }}">show</a>
+                    <a href="{{ path('matrix_edit', {'id': matrix.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="6">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('matrix_new') }}">Create new</a>
+{% endblock %}
