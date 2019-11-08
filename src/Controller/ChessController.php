@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Bitboard;
 use App\Entity\Matrix;
 use App\Entity\Matriz;
 use App\Entity\Piece;
@@ -24,26 +25,6 @@ class ChessController extends AbstractController
 
     public function startTheGame()
     {
-
-//Whites
-//$king = new Piece();
-//$rook = new Piece();
-//$bishop = new Piece();
-//
-//$goldGeneral1 = new Piece();
-//$goldGeneral2 = new Piece();
-//
-//$silverGeneral1 = new Piece();
-//$silverGeneral2 = new Piece();
-//
-//$knight1 = new Piece();
-//$knight2 = new Piece();
-//
-//$lance1 = new Piece();
-//$lance2 = new Piece();
-//
-//$pawn = new Piece();
-//Blacks
 
 
     }
@@ -107,10 +88,103 @@ class ChessController extends AbstractController
     }
 
 
-    public function generatePositionBitboardsByPiece()
+    /**
+     * @param Matrix $matrix
+     * @return array
+     */
+    public function matrixCreateWithoutModel($row, $col)
+    {
+        $matrixArray = array();
+
+        for ($i = 0; $i < $row; $i++) {
+            for ($j = 0; $j < $col; $j++) {
+                $matrixArray[$i][$j] = "(" . $i . ';' . $j . ")";
+            }
+        }
+
+        return $matrixArray;
+    }
+
+    /**
+     * @Route("/generateBitBoards", name="generate_bit_boards")
+     */
+    public function genetaBitboards()
     {
 
+        $entityManager = $this->getDoctrine()->getManager();
+        $pieces = $entityManager->getRepository('App\Entity\Piece')->findAll();
 
+        foreach ($pieces as $piece) {
+            $this->generatePositionBitboardsByPiece($piece, 9, 9);
+        }
+
+        die("Listo");
+
+    }
+
+
+    public function generatePositionBitboardsByPiece($piece, $row, $col)
+    {
+        $metodoGeneradorString = "";
+        $metodoGeneradorString = $piece->getGenerator();
+
+        $entityManager = $this->getDoctrine()->getManager();
+
+        for ($i = 0; $i < $row; $i++) {
+            for ($j = 0; $j < $col; $j++) {
+
+                $bitboard = new  Bitboard();
+                $promoted = $piece->getPromoted();
+                $color = $piece->getColor();
+
+                $baseMatrix = $this->matrixCreateWithoutModel(9, 9);
+                $matrix = $this->createMatrixPosibleMovements($baseMatrix, $metodoGeneradorString, $promoted, $color, $i, $j);
+                $arrayBitBoard = $this->fromMatrixToBitboard($matrix, 9, 9);
+
+                $bitboard->setBitboard(implode(", ", $arrayBitBoard));
+
+                $piece->addBitboard($bitboard);
+
+                $entityManager->persist($piece);
+                $entityManager->persist($bitboard);
+            }
+        }
+
+        $entityManager->flush();
+    }
+
+
+    public function createMatrixPosibleMovements($baseMatrix, $metodoGeneradorString, $promoted, $color, $y, $x)
+    {
+        $resultMatrix = null;
+        switch ($metodoGeneradorString) {
+            case "king":
+                $resultMatrix = $this->king($baseMatrix, $y, $x);
+                break;
+            case "rook":
+                $resultMatrix = $this->rook($baseMatrix, $y, $x, 9, $promoted);
+                break;
+            case "bishop":
+                $resultMatrix = $this->bishop($baseMatrix, $y, $x, $promoted);
+                break;
+            case "goldGeneral":
+                $resultMatrix = $this->goldGeneral($baseMatrix, $y, $x, $color);
+                break;
+            case "silverGeneral":
+                $resultMatrix = $this->silverGeneral($baseMatrix, $y, $x, $color, $promoted);
+                break;
+            case "knight":
+                $resultMatrix = $this->knight($baseMatrix, $y, $x, $color, $promoted);
+                break;
+            case "lance":
+                $resultMatrix = $this->lance($baseMatrix, $y, $x, $color, $promoted);
+                break;
+            case "pawn":
+                $resultMatrix = $this->pawn($baseMatrix, $y, $x, $color, $promoted);
+                break;
+        }
+
+        return $resultMatrix;
     }
 
 
@@ -151,7 +225,6 @@ class ChessController extends AbstractController
     public function crearPawns()
     {
         $entityManager = $this->getDoctrine()->getManager();
-
 
         //White
         for ($i = 0, $j = 2; $i < 9; $i++) {
@@ -430,7 +503,7 @@ class ChessController extends AbstractController
         if ($promoted == true) {
             $matrix = $this->goldGeneral($matrixArray, $y, $x, $color);
         } else {
-            $matrix = $this->colForward($matrixArray, $y, $x, $color);
+            $matrix = $this->colForward($matrixArray, $y, $x, 9, $color);
         }
         return $matrix;
     }

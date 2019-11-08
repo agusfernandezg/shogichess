@@ -53,10 +53,6 @@ class Piece
      */
     private $col;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Bitboard", inversedBy="piece")
-     */
-    private $bitboard;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
@@ -68,10 +64,16 @@ class Piece
      */
     private $promotedgenerator;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Bitboard", mappedBy="piece")
+     */
+    private $bitboards;
+
 
     public function __construct()
     {
         $this->moves = new ArrayCollection();
+        $this->bitboards = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -182,17 +184,6 @@ class Piece
         return $this;
     }
 
-    public function getBitboard(): ?Bitboard
-    {
-        return $this->bitboard;
-    }
-
-    public function setBitboard(?Bitboard $bitboard): self
-    {
-        $this->bitboard = $bitboard;
-
-        return $this;
-    }
 
     public function getGenerator(): ?string
     {
@@ -214,6 +205,37 @@ class Piece
     public function setPromotedgenerator(string $promotedgenerator): self
     {
         $this->promotedgenerator = $promotedgenerator;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|Bitboard[]
+     */
+    public function getBitboards(): Collection
+    {
+        return $this->bitboards;
+    }
+
+    public function addBitboard(Bitboard $bitboard): self
+    {
+        if (!$this->bitboards->contains($bitboard)) {
+            $this->bitboards[] = $bitboard;
+            $bitboard->setPiece($this);
+        }
+
+        return $this;
+    }
+
+    public function removeBitboard(Bitboard $bitboard): self
+    {
+        if ($this->bitboards->contains($bitboard)) {
+            $this->bitboards->removeElement($bitboard);
+            // set the owning side to null (unless already changed)
+            if ($bitboard->getPiece() === $this) {
+                $bitboard->setPiece(null);
+            }
+        }
 
         return $this;
     }

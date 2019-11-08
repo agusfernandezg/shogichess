@@ -24,18 +24,18 @@ class Bitboard
     private $name;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Piece", mappedBy="bitboard")
-     */
-    private $piece;
-
-    /**
      * @ORM\Column(type="string", length=81)
      */
     private $bitboard;
 
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Piece", inversedBy="bitboards")
+     */
+    private $piece;
+
     public function __construct()
     {
-        $this->piece = new ArrayCollection();
+
     }
 
     public function getId(): ?int
@@ -55,36 +55,6 @@ class Bitboard
         return $this;
     }
 
-    /**
-     * @return Collection|Piece[]
-     */
-    public function getPiece(): Collection
-    {
-        return $this->piece;
-    }
-
-    public function addPiece(Piece $piece): self
-    {
-        if (!$this->piece->contains($piece)) {
-            $this->piece[] = $piece;
-            $piece->setBitboard($this);
-        }
-
-        return $this;
-    }
-
-    public function removePiece(Piece $piece): self
-    {
-        if ($this->piece->contains($piece)) {
-            $this->piece->removeElement($piece);
-            // set the owning side to null (unless already changed)
-            if ($piece->getBitboard() === $this) {
-                $piece->setBitboard(null);
-            }
-        }
-
-        return $this;
-    }
 
     public function getBitboard(): ?string
     {
@@ -94,6 +64,18 @@ class Bitboard
     public function setBitboard(string $bitboard): self
     {
         $this->bitboard = $bitboard;
+
+        return $this;
+    }
+
+    public function getPiece(): ?Piece
+    {
+        return $this->piece;
+    }
+
+    public function setPiece(?Piece $piece): self
+    {
+        $this->piece = $piece;
 
         return $this;
     }
