@@ -33,6 +33,16 @@ class Bitboard
      */
     private $piece;
 
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $row;
+
+    /**
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $col;
+
     public function __construct()
     {
 
@@ -76,6 +86,30 @@ class Bitboard
     public function setPiece(?Piece $piece): self
     {
         $this->piece = $piece;
+
+        return $this;
+    }
+
+    public function getRow(): ?int
+    {
+        return $this->row;
+    }
+
+    public function setRow(?int $row): self
+    {
+        $this->row = $row;
+
+        return $this;
+    }
+
+    public function getCol(): ?int
+    {
+        return $this->col;
+    }
+
+    public function setCol(?int $col): self
+    {
+        $this->col = $col;
 
         return $this;
     }

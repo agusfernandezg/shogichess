@@ -105,10 +105,23 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
+    public function fromMatrixToBitboard($matrix, $row, $col)
+    {
+        $arrayBitboard = array();
+        for ($i = 0; $i < $row; $i++) {
+            for ($j = 0; $j < $col; $j++) {
+                array_push($arrayBitboard, $matrix[$i][$j]);
+            }
+        }
+
+        return $arrayBitboard;
+    }
+
+
     /**
-     * @Route("/generateBitBoards", name="generate_bit_boards")
+     * @Route("/generateAllBitBoards", name="generate_all_bit_boards")
      */
-    public function genetaBitboards()
+    public function generateAllBitBoards()
     {
 
         $entityManager = $this->getDoctrine()->getManager();
@@ -118,14 +131,150 @@ class ChessController extends AbstractController
             $this->generatePositionBitboardsByPiece($piece, 9, 9);
         }
 
-        die("Listo");
+        //Generate a BitBoard with all the pieces in the initial position
+        $this->generateAllPiecesPositionBitBoard();
 
+        //Generate a BitBoard with all the WHITE pieces in the initial position
+        $this->generateWhitePiecesPositionBitBoard();
+
+        //Generate a BitBoard with all the BLACK pieces in the initial position
+        $this->generateBlackPiecesPositionBitBoard();
+
+        die("Listo");
+    }
+
+
+    public function generateAllPiecesPositionBitBoard()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $pieces = $entityManager->getRepository('App\Entity\Piece')->findAll();
+
+        $checkIfAlreadyExiste = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_pieces']);
+
+        if (!$checkIfAlreadyExiste) {
+            $bitBoardAllPieces = new Bitboard();
+            $matrix = $this->matrixCreateWithoutModel(9, 9);
+            $bitBoardAllPieces->setName('all_pieces');
+
+            foreach ($pieces as $piece) {
+                $pieceRow = $piece->getRow();
+                $pieceCol = $piece->getCol();
+                $matrix[$pieceRow][$pieceCol] = 1;
+                $this->generateBitBoardInitialPositionPerPiece($piece, $pieceRow, $pieceCol);
+            }
+
+            $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
+            $bitBoardAllPieces->setBitboard(implode($bitBoardArray));
+
+            $entityManager->persist($bitBoardAllPieces);
+            $entityManager->flush();
+        } else {
+
+        }
+
+        return new JsonResponse("ok");
+    }
+
+
+    public function generateBitBoardInitialPositionPerPiece($piece, $row, $col)
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $bitBoardPieceActualPosition = new Bitboard();
+        $matrix = $this->matrixCreateWithoutModel(9, 9);
+
+        $checkIfAlreadyExiste = $entityManager->getRepository('App:Bitboard')->findOneBy(['piece' => $piece->getCode() . "_current_position"]);
+
+        $matrix[$row][$col] = 1;
+
+        //Si yá existe, lo actualizo a la posición Inicial de la piza, sino creo uno nuevo.
+        if ($checkIfAlreadyExiste) {
+            $piece->addBitboard($checkIfAlreadyExiste);
+            $checkIfAlreadyExiste->setName($piece->getCode() . "_current_position");
+            $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
+            $checkIfAlreadyExiste->setBitboard(implode($bitBoardArray));
+            $entityManager->persist($checkIfAlreadyExiste);
+            $entityManager->persist($piece);
+        } else {
+            $piece->addBitboard($bitBoardPieceActualPosition);
+            $bitBoardPieceActualPosition->setName($piece->getCode() . "_current_position");
+            $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
+            $bitBoardPieceActualPosition->setBitboard(implode($bitBoardArray));
+            $entityManager->persist($bitBoardPieceActualPosition);
+            $entityManager->persist($piece);
+        }
+
+        $entityManager->flush();
+
+    }
+
+
+    public function generateWhitePiecesPositionBitBoard()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $pieces = $entityManager->getRepository('App\Entity\Piece')->findBy(array('color' => 'white'));
+
+        $checkIfAlreadyExiste = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_white_pieces']);
+
+        if (!$checkIfAlreadyExiste) {
+            $bitBoardAllPieces = new Bitboard();
+            $matrix = $this->matrixCreateWithoutModel(9, 9);
+
+            $bitBoardAllPieces->setName('all_white_pieces');
+
+            foreach ($pieces as $piece) {
+                $pieceRow = $piece->getRow();
+                $pieceCol = $piece->getCol();
+                $matrix[$pieceRow][$pieceCol] = 1;
+            }
+
+            $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
+            $bitBoardAllPieces->setBitboard(implode($bitBoardArray));
+
+            $entityManager->persist($bitBoardAllPieces);
+            $entityManager->flush();
+        } else {
+
+        }
+
+        return new JsonResponse("ok");
+    }
+
+
+    public function generateBlackPiecesPositionBitBoard()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $pieces = $entityManager->getRepository('App\Entity\Piece')->findBy(array('color' => 'black'));
+
+        $checkIfAlreadyExiste = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_black_pieces']);
+
+        if (!$checkIfAlreadyExiste) {
+            $bitBoardAllPieces = new Bitboard();
+            $matrix = $this->matrixCreateWithoutModel(9, 9);
+
+            $bitBoardAllPieces->setName('all_black_pieces');
+
+            foreach ($pieces as $piece) {
+                $pieceRow = $piece->getRow();
+                $pieceCol = $piece->getCol();
+                $matrix[$pieceRow][$pieceCol] = 1;
+            }
+
+            $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
+            $bitBoardAllPieces->setBitboard(implode($bitBoardArray));
+
+            $entityManager->persist($bitBoardAllPieces);
+            $entityManager->flush();
+        } else {
+
+        }
+
+        return new JsonResponse("ok");
     }
 
 
     public function generatePositionBitboardsByPiece($piece, $row, $col)
     {
-        $metodoGeneradorString = "";
+
         $metodoGeneradorString = $piece->getGenerator();
 
         $entityManager = $this->getDoctrine()->getManager();
@@ -133,20 +282,33 @@ class ChessController extends AbstractController
         for ($i = 0; $i < $row; $i++) {
             for ($j = 0; $j < $col; $j++) {
 
-                $bitboard = new  Bitboard();
-                $promoted = $piece->getPromoted();
-                $color = $piece->getColor();
+                $checkIfAlreadyExiste = $entityManager->getRepository('App:Bitboard')->findOneBy(
+                    [
+                        'piece' => $piece,
+                        'row' => $i,
+                        'col' => $j
+                    ]);
 
-                $baseMatrix = $this->matrixCreateWithoutModel(9, 9);
-                $matrix = $this->createMatrixPosibleMovements($baseMatrix, $metodoGeneradorString, $promoted, $color, $i, $j);
-                $arrayBitBoard = $this->fromMatrixToBitboard($matrix, 9, 9);
+                if (!$checkIfAlreadyExiste) {
+                    $bitboard = new  Bitboard();
+                    $promoted = $piece->getPromoted();
+                    $color = $piece->getColor();
 
-                $bitboard->setBitboard(implode( $arrayBitBoard));
+                    $baseMatrix = $this->matrixCreateWithoutModel(9, 9);
+                    $matrix = $this->createMatrixPosibleMovements($baseMatrix, $metodoGeneradorString, $promoted, $color, $i, $j);
+                    $arrayBitBoard = $this->fromMatrixToBitboard($matrix, 9, 9);
 
-                $piece->addBitboard($bitboard);
+                    $bitboard->setBitboard(implode($arrayBitBoard));
+                    $bitboard->setRow($i);
+                    $bitboard->setCol($j);
+                    $bitboard->setName($piece->getCode());
 
-                $entityManager->persist($piece);
-                $entityManager->persist($bitboard);
+                    $piece->addBitboard($bitboard);
+
+                    $entityManager->persist($piece);
+                    $entityManager->persist($bitboard);
+                }
+
             }
         }
 
@@ -185,19 +347,6 @@ class ChessController extends AbstractController
         }
 
         return $resultMatrix;
-    }
-
-
-    public function fromMatrixToBitboard($matrix, $row, $col)
-    {
-        $arrayBitboard = array();
-        for ($i = 0; $i < $row; $i++) {
-            for ($j = 0; $j < $col; $j++) {
-                array_push($arrayBitboard, $matrix[$i][$j]);
-            }
-        }
-
-        return $arrayBitboard;
     }
 
 
