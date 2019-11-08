@@ -98,7 +98,7 @@ class ChessController extends AbstractController
 
         for ($i = 0; $i < $row; $i++) {
             for ($j = 0; $j < $col; $j++) {
-                $matrixArray[$i][$j] = "(" . $i . ';' . $j . ")";
+                $matrixArray[$i][$j] = 0;
             }
         }
 
@@ -141,7 +141,7 @@ class ChessController extends AbstractController
                 $matrix = $this->createMatrixPosibleMovements($baseMatrix, $metodoGeneradorString, $promoted, $color, $i, $j);
                 $arrayBitBoard = $this->fromMatrixToBitboard($matrix, 9, 9);
 
-                $bitboard->setBitboard(implode(", ", $arrayBitBoard));
+                $bitboard->setBitboard(implode( $arrayBitBoard));
 
                 $piece->addBitboard($bitboard);
 
@@ -264,7 +264,7 @@ class ChessController extends AbstractController
     public function row($matrixArray, $row, $size)
     {
         for ($j = 0; $j < $size; $j++) {
-            $matrixArray[$row][$j] = 'F';
+            $matrixArray[$row][$j] = 1;
         }
         return $matrixArray;
     }
@@ -273,7 +273,7 @@ class ChessController extends AbstractController
     public function col($matrixArray, $col, $size)
     {
         for ($i = 0; $i < $size; $i++) {
-            $matrixArray[$i][$col] = 'C';
+            $matrixArray[$i][$col] = 1;
         }
         return $matrixArray;
     }
@@ -285,13 +285,13 @@ class ChessController extends AbstractController
 
             case('white'):
                 for ($i = $y; $i >= 0; $i--) {
-                    $matrixArray[$i][$x] = 'C';
+                    $matrixArray[$i][$x] = 1;
                 }
                 break;
 
             case('black'):
                 for ($i = $y; $i <= $size; $i++) {
-                    $matrixArray[$i][$x] = 'C';
+                    $matrixArray[$i][$x] = 1;
                 }
                 break;
         }
@@ -304,11 +304,11 @@ class ChessController extends AbstractController
     public function mainDiagonal($matrixArray, $y, $x)
     {
         for ($i = $y, $j = $x; $i >= 0; $i--, $j++) {
-            $matrixArray[$i][$j] = 'D';
+            $matrixArray[$i][$j] = 1;
         }
 
         for ($j = $x, $i = $y; $j >= 0; $i++, $j--) {
-            $matrixArray[$i][$j] = 'D';
+            $matrixArray[$i][$j] = 1;
         }
         return $matrixArray;
     }
@@ -317,11 +317,11 @@ class ChessController extends AbstractController
     public function secondaryDiagonal($matrixArray, $y, $x, $row, $col)
     {
         for ($i = $y, $j = $x; $i >= 0 || $j >= 0; $i--, $j--) {
-            $matrixArray[$i][$j] = 'D';
+            $matrixArray[$i][$j] = 1;
         }
 
         for ($i = $y, $j = $x; $i <= $row || $j <= $col; $i++, $j++) {
-            $matrixArray[$i][$j] = 'D';
+            $matrixArray[$i][$j] = 1;
         }
         return $matrixArray;
     }
@@ -330,14 +330,14 @@ class ChessController extends AbstractController
     //Doesn't matter if its  Black or White side
     public function king($matrixArray, $y, $x)
     {
-        isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
-        isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
-        isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
-        isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
-        isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
-        isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
-        isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
-        isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+        isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = 1 : null;
+        isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = 1 : null;
+        isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = 1 : null;
+        isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = 1 : null;
+        isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = 1 : null;
+        isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = 1 : null;
+        isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = 1 : null;
+        isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = 1 : null;
 
         return $matrixArray;
     }
@@ -356,14 +356,14 @@ class ChessController extends AbstractController
                 $matrixRow = $this->row($matrixArray, $y, $size);
                 $matrix = $this->col($matrixRow, $x, $size);
 
-                isset($matrix[$y - 1][$x - 1]) ? $matrix[$y - 1][$x - 1] = "r" : null;
-                //isset($matrix[$y - 1][$x]) ? $matrix[$y - 1][$x] = "r" : null;
-                isset($matrix[$y - 1][$x + 1]) ? $matrix[$y - 1][$x + 1] = "r" : null;
-                //isset($matrix[$y][$x + 1]) ? $matrix[$y][$x + 1] = "r" : null;
-                isset($matrix[$y + 1][$x + 1]) ? $matrix[$y + 1][$x + 1] = "r" : null;
-                //isset($matrix[$y + 1][$x]) ? $matrix[$y + 1][$x] = "r" : null;
-                isset($matrix[$y + 1][$x - 1]) ? $matrix[$y + 1][$x - 1] = "r" : null;
-                // isset($matrix[$y][$x - 1]) ? $matrix[$y][$x - 1] = "r" : null;
+                isset($matrix[$y - 1][$x - 1]) ? $matrix[$y - 1][$x - 1] = 1 : null;
+                //isset($matrix[$y - 1][$x]) ? $matrix[$y - 1][$x] = 1 : null;
+                isset($matrix[$y - 1][$x + 1]) ? $matrix[$y - 1][$x + 1] = 1 : null;
+                //isset($matrix[$y][$x + 1]) ? $matrix[$y][$x + 1] = 1 : null;
+                isset($matrix[$y + 1][$x + 1]) ? $matrix[$y + 1][$x + 1] = 1 : null;
+                //isset($matrix[$y + 1][$x]) ? $matrix[$y + 1][$x] = 1 : null;
+                isset($matrix[$y + 1][$x - 1]) ? $matrix[$y + 1][$x - 1] = 1 : null;
+                // isset($matrix[$y][$x - 1]) ? $matrix[$y][$x - 1] = 1 : null;
 
                 break;
         }
@@ -385,14 +385,14 @@ class ChessController extends AbstractController
                 $matrixDiagonalP = $this->mainDiagonal($matrixArray, $y, $x);
                 $matrix = $this->secondaryDiagonal($matrixDiagonalP, $y, $x, 9, 9);
 
-                //isset($matrix[$y - 1][$x - 1]) ? $matrix[$y - 1][$x - 1] = "r" : null;
-                isset($matrix[$y - 1][$x]) ? $matrix[$y - 1][$x] = "r" : null;
-                //isset($matrix[$y - 1][$x + 1]) ? $matrix[$y - 1][$x + 1] = "r" : null;
-                isset($matrix[$y][$x + 1]) ? $matrix[$y][$x + 1] = "r" : null;
-                //isset($matrix[$y + 1][$x + 1]) ? $matrix[$y + 1][$x + 1] = "r" : null;
-                isset($matrix[$y + 1][$x]) ? $matrix[$y + 1][$x] = "r" : null;
-                //isset($matrix[$y + 1][$x - 1]) ? $matrix[$y + 1][$x - 1] = "r" : null;
-                isset($matrix[$y][$x - 1]) ? $matrix[$y][$x - 1] = "r" : null;
+                //isset($matrix[$y - 1][$x - 1]) ? $matrix[$y - 1][$x - 1] = 1 : null;
+                isset($matrix[$y - 1][$x]) ? $matrix[$y - 1][$x] = 1 : null;
+                //isset($matrix[$y - 1][$x + 1]) ? $matrix[$y - 1][$x + 1] = 1 : null;
+                isset($matrix[$y][$x + 1]) ? $matrix[$y][$x + 1] = 1 : null;
+                //isset($matrix[$y + 1][$x + 1]) ? $matrix[$y + 1][$x + 1] = 1 : null;
+                isset($matrix[$y + 1][$x]) ? $matrix[$y + 1][$x] = 1 : null;
+                //isset($matrix[$y + 1][$x - 1]) ? $matrix[$y + 1][$x - 1] = 1 : null;
+                isset($matrix[$y][$x - 1]) ? $matrix[$y][$x - 1] = 1 : null;
 
                 break;
         }
@@ -406,26 +406,26 @@ class ChessController extends AbstractController
         switch ($color) {
 
             case('white'):
-                //isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
-                isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
-                //isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
-                isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
-                isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
-                isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
-                isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
-                isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+                //isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = 1 : null;
+                isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = 1 : null;
+                //isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = 1 : null;
+                isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = 1 : null;
+                isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = 1 : null;
+                isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = 1 : null;
+                isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = 1 : null;
+                isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = 1 : null;
 
                 break;
 
             case('black'):
-                isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
-                isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
-                isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
-                isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
-                //isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
-                isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
-                //isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
-                isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+                isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = 1 : null;
+                isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = 1 : null;
+                isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = 1 : null;
+                isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = 1 : null;
+                //isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = 1 : null;
+                isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = 1 : null;
+                //isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = 1 : null;
+                isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = 1 : null;
 
                 break;
         }
@@ -444,26 +444,26 @@ class ChessController extends AbstractController
             switch ($color) {
 
                 case('white'):
-                    isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
-                    //isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
-                    isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
-                    //isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
-                    isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
-                    isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
-                    isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
-                    //isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+                    isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = 1 : null;
+                    //isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = 1 : null;
+                    isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = 1 : null;
+                    //isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = 1 : null;
+                    isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = 1 : null;
+                    isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = 1 : null;
+                    isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = 1 : null;
+                    //isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = 1 : null;
 
                     break;
 
                 case('black'):
-                    isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
-                    isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
-                    isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
-                    //isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
-                    isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
-                    //isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
-                    isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
-                    //isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+                    isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = 1 : null;
+                    isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = 1 : null;
+                    isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = 1 : null;
+                    //isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = 1 : null;
+                    isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = 1 : null;
+                    //isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = 1 : null;
+                    isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = 1 : null;
+                    //isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = 1 : null;
 
                     break;
             }
@@ -481,14 +481,14 @@ class ChessController extends AbstractController
             switch ($color) {
 
                 case('white'):
-                    isset($matrixArray[$y + 2][$x + 1]) ? $matrixArray[$y - 2][$x - 1] = "r" : null;
-                    isset($matrixArray[$y + 2][$x - 1]) ? $matrixArray[$y - 2][$x + 1] = "r" : null;
+                    isset($matrixArray[$y + 2][$x + 1]) ? $matrixArray[$y - 2][$x - 1] = 1 : null;
+                    isset($matrixArray[$y + 2][$x - 1]) ? $matrixArray[$y - 2][$x + 1] = 1 : null;
 
                     break;
 
                 case('black'):
-                    isset($matrixArray[$y - 2][$x - 1]) ? $matrixArray[$y - 2][$x - 1] = "r" : null;
-                    isset($matrixArray[$y - 2][$x + 1]) ? $matrixArray[$y - 2][$x + 1] = "r" : null;
+                    isset($matrixArray[$y - 2][$x - 1]) ? $matrixArray[$y - 2][$x - 1] = 1 : null;
+                    isset($matrixArray[$y - 2][$x + 1]) ? $matrixArray[$y - 2][$x + 1] = 1 : null;
 
                     break;
             }
@@ -517,10 +517,10 @@ class ChessController extends AbstractController
         } else {
             switch ($color) {
                 case('white'):
-                    isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
+                    isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = 1 : null;
                     break;
                 case('black'):
-                    isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
+                    isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = 1 : null;
                     break;
             }
         }
