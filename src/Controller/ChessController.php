@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Matrix;
 use App\Entity\Matriz;
+use App\Entity\Piece;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -17,6 +18,36 @@ class ChessController extends AbstractController
         return $this->render('chess/index.html.twig', [
             'controller_name' => 'ChessController',
         ]);
+    }
+
+
+    public function startTheGame()
+    {
+
+//Whites
+//$king = new Piece();
+//$rook = new Piece();
+//$bishop = new Piece();
+//
+//$goldGeneral1 = new Piece();
+//$goldGeneral2 = new Piece();
+//
+//$silverGeneral1 = new Piece();
+//$silverGeneral2 = new Piece();
+//
+//$knight1 = new Piece();
+//$knight2 = new Piece();
+//
+//$lance1 = new Piece();
+//$lance2 = new Piece();
+//
+//$pawn = new Piece();
+//Blacks
+
+
+
+
+
     }
 
 
@@ -34,7 +65,7 @@ class ChessController extends AbstractController
         $this->drawBoard($boardArray, 9, 9);
         print_r("<br>");
 
-//        $newBoardF = $this->fila($boardArray, 5, 9);
+//        $newBoardF = $this->row($boardArray, 5, 9);
 //        $this->drawBoard($newBoardF, 9, 9);
 //        print_r("<br>");
 //
@@ -48,10 +79,10 @@ class ChessController extends AbstractController
 //        print_r("<br>");
 //        $newBoardDS = $this->diagonalSecundaria($boardArray, 5, 5, 9, 9);
 //        $this->drawBoard($newBoardDS, 9, 9);
-
-        print_r("<br>");
-        $newBoardKing = $this->pawn($boardArray, 5, 3);
-        $this->drawBoard($newBoardKing, 9, 9);
+//
+//        print_r("<br>");
+//        $newBoardKing = $this->pawn($boardArray, 5, 3);
+//        $this->drawBoard($newBoardKing, 9, 9);
 
         die();
         //return new JsonResponse("Punck");
@@ -80,6 +111,7 @@ class ChessController extends AbstractController
 
     public function drawBoard($matrixArray, $row, $col)
     {
+
         print_r("<style> .center{text-align: center;}</style>");
 
         print_r("<table>");
@@ -92,10 +124,12 @@ class ChessController extends AbstractController
         }
 
         print_r("</table>");
+
     }
 
 
-    public function fila($matrixArray, $row, $size)
+    //Doesn't matter if its about Black or White side
+    public function row($matrixArray, $row, $size)
     {
         for ($j = 0; $j < $size; $j++) {
             $matrixArray[$row][$j] = 'F';
@@ -103,7 +137,7 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-
+    //Doesn't matter if its about Black or White side
     public function col($matrixArray, $col, $size)
     {
         for ($i = 0; $i < $size; $i++) {
@@ -112,15 +146,30 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    public function colForward($matrixArray, $y, $x)
+    // Does matter side
+    public function colForward($matrixArray, $y, $x, $size, $color)
     {
-        for ($i = $y; $i >= 0; $i--) {
-            $matrixArray[$i][$x] = 'C';
+        switch ($color) {
+
+            case('white'):
+                for ($i = $y; $i >= 0; $i--) {
+                    $matrixArray[$i][$x] = 'C';
+                }
+                break;
+
+            case('black'):
+                for ($i = $y; $i <= $size; $i++) {
+                    $matrixArray[$i][$x] = 'C';
+                }
+                break;
+
         }
+
         return $matrixArray;
     }
 
 
+    //Doesn't matter if its about Black or White side
     public function mainDiagonal($matrixArray, $y, $x)
     {
         for ($i = $y, $j = $x; $i >= 0; $i--, $j++) {
@@ -130,11 +179,10 @@ class ChessController extends AbstractController
         for ($j = $x, $i = $y; $j >= 0; $i++, $j--) {
             $matrixArray[$i][$j] = 'D';
         }
-
         return $matrixArray;
     }
 
-
+    //Doesn't matter if its about Black or White side
     public function secondaryDiagonal($matrixArray, $y, $x, $row, $col)
     {
         for ($i = $y, $j = $x; $i >= 0 || $j >= 0; $i--, $j--) {
@@ -144,11 +192,11 @@ class ChessController extends AbstractController
         for ($i = $y, $j = $x; $i <= $row || $j <= $col; $i++, $j++) {
             $matrixArray[$i][$j] = 'D';
         }
-
         return $matrixArray;
     }
 
 
+    //Doesn't matter if its about Black or White side
     public function king($matrixArray, $y, $x)
     {
         isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
@@ -163,73 +211,189 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-
-    public function tower($matrixArray, $y, $x, $size)
+    //Doesn't matter if its about Black or White side
+    public function rook($matrixArray, $y, $x, $size, $promoted = false)
     {
-        $matrixRow = $this->fila($matrixArray, $y, $size);
-        $matrix = $this->col($matrixRow, $x, $size);
+        switch ($promoted) {
+
+            case false:
+                $matrixRow = $this->row($matrixArray, $y, $size);
+                $matrix = $this->col($matrixRow, $x, $size);
+                break;
+
+            case true:
+                $matrixRow = $this->row($matrixArray, $y, $size);
+                $matrix = $this->col($matrixRow, $x, $size);
+
+                isset($matrix[$y - 1][$x - 1]) ? $matrix[$y - 1][$x - 1] = "r" : null;
+                //isset($matrix[$y - 1][$x]) ? $matrix[$y - 1][$x] = "r" : null;
+                isset($matrix[$y - 1][$x + 1]) ? $matrix[$y - 1][$x + 1] = "r" : null;
+                //isset($matrix[$y][$x + 1]) ? $matrix[$y][$x + 1] = "r" : null;
+                isset($matrix[$y + 1][$x + 1]) ? $matrix[$y + 1][$x + 1] = "r" : null;
+                //isset($matrix[$y + 1][$x]) ? $matrix[$y + 1][$x] = "r" : null;
+                isset($matrix[$y + 1][$x - 1]) ? $matrix[$y + 1][$x - 1] = "r" : null;
+                // isset($matrix[$y][$x - 1]) ? $matrix[$y][$x - 1] = "r" : null;
+
+                break;
+        }
 
         return $matrix;
     }
 
-
-    public function bishop($matrixArray, $y, $x)
+    //Doesn't matter if its about Black or White side
+    public function bishop($matrixArray, $y, $x, $promoted)
     {
-        $matrixDiagonalP = $this->mainDiagonal($matrixArray, $y, $x);
-        $matrix = $this->secondaryDiagonal($matrixDiagonalP, $y, $x, 9, 9);
+
+        switch ($promoted) {
+            case false:
+                $matrixDiagonalP = $this->mainDiagonal($matrixArray, $y, $x);
+                $matrix = $this->secondaryDiagonal($matrixDiagonalP, $y, $x, 9, 9);
+                break;
+
+            case true:
+                $matrixDiagonalP = $this->mainDiagonal($matrixArray, $y, $x);
+                $matrix = $this->secondaryDiagonal($matrixDiagonalP, $y, $x, 9, 9);
+
+                //isset($matrix[$y - 1][$x - 1]) ? $matrix[$y - 1][$x - 1] = "r" : null;
+                isset($matrix[$y - 1][$x]) ? $matrix[$y - 1][$x] = "r" : null;
+                //isset($matrix[$y - 1][$x + 1]) ? $matrix[$y - 1][$x + 1] = "r" : null;
+                isset($matrix[$y][$x + 1]) ? $matrix[$y][$x + 1] = "r" : null;
+                //isset($matrix[$y + 1][$x + 1]) ? $matrix[$y + 1][$x + 1] = "r" : null;
+                isset($matrix[$y + 1][$x]) ? $matrix[$y + 1][$x] = "r" : null;
+                //isset($matrix[$y + 1][$x - 1]) ? $matrix[$y + 1][$x - 1] = "r" : null;
+                isset($matrix[$y][$x - 1]) ? $matrix[$y][$x - 1] = "r" : null;
+
+                break;
+
+        }
 
         return $matrix;
     }
 
-    public function goldGeneral($matrixArray, $y, $x)
+    // Does matter side non promotional
+    public function goldGeneral($matrixArray, $y, $x, $color)
     {
-        isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
-        isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
-        isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
-        isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
-        //isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
-        isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
-        //isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
-        isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+        switch ($color) {
+
+            case('white'):
+                //isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
+                isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
+                //isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
+                isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
+                isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
+                isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
+                isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
+                isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+
+                break;
+
+            case('black'):
+                isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
+                isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
+                isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
+                isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
+                //isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
+                isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
+                //isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
+                isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+
+                break;
+        }
 
         return $matrixArray;
     }
 
-
-    public function silverGeneral($matrixArray, $y, $x)
+    // Does matter side
+    public function silverGeneral($matrixArray, $y, $x, $color, $promoted)
     {
-        isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
-        isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
-        isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
-        //isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
-        isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
-        //isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
-        isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
-        //isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+
+        if ($promoted == true) {
+            $matrixArray = $this->goldGeneral($matrixArray, $y, $x, $color);
+        } else {
+
+            switch ($color) {
+
+                case('white'):
+                    isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
+                    //isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
+                    isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
+                    //isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
+                    isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
+                    isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
+                    isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
+                    //isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+
+                    break;
+
+                case('black'):
+                    isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
+                    isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
+                    isset($matrixArray[$y - 1][$x + 1]) ? $matrixArray[$y - 1][$x + 1] = "r" : null;
+                    //isset($matrixArray[$y][$x + 1]) ? $matrixArray[$y][$x + 1] = "r" : null;
+                    isset($matrixArray[$y + 1][$x + 1]) ? $matrixArray[$y + 1][$x + 1] = "r" : null;
+                    //isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = "r" : null;
+                    isset($matrixArray[$y + 1][$x - 1]) ? $matrixArray[$y + 1][$x - 1] = "r" : null;
+                    //isset($matrixArray[$y][$x - 1]) ? $matrixArray[$y][$x - 1] = "r" : null;
+
+                    break;
+            }
+        }
 
         return $matrixArray;
     }
 
-
-    public function knight($matrixArray, $y, $x)
+    // Does matter side
+    public function knight($matrixArray, $y, $x, $color, $promoted)
     {
-        isset($matrixArray[$y - 2][$x - 1]) ? $matrixArray[$y - 2][$x - 1] = "r" : null;
-        isset($matrixArray[$y - 2][$x + 1]) ? $matrixArray[$y - 2][$x + 1] = "r" : null;
+        if ($promoted == true) {
+            $matrixArray = $this->goldGeneral($matrixArray, $y, $x, $color);
+        } else {
+            switch ($color) {
+
+                case('white'):
+                    isset($matrixArray[$y + 2][$x + 1]) ? $matrixArray[$y - 2][$x - 1] = "r" : null;
+                    isset($matrixArray[$y + 2][$x - 1]) ? $matrixArray[$y - 2][$x + 1] = "r" : null;
+
+                    break;
+
+                case('black'):
+                    isset($matrixArray[$y - 2][$x - 1]) ? $matrixArray[$y - 2][$x - 1] = "r" : null;
+                    isset($matrixArray[$y - 2][$x + 1]) ? $matrixArray[$y - 2][$x + 1] = "r" : null;
+
+                    break;
+            }
+        }
+
         return $matrixArray;
     }
 
-    public function lance($matrixArray, $y, $x)
+    // Does matter side
+    public function lance($matrixArray, $y, $x, $color, $promoted)
     {
-        $matrix = $this->colForward($matrixArray, $y, $x);
-
+        if ($promoted == true) {
+            $matrix = $this->goldGeneral($matrixArray, $y, $x, $color);
+        } else {
+            $matrix = $this->colForward($matrixArray, $y, $x, $color);
+        }
         return $matrix;
     }
 
 
-    public function pawn($matrixArray, $y, $x)
+    // Does matter side
+    public function pawn($matrixArray, $y, $x, $color, $promoted)
     {
-        isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
-
+        if ($promoted == true) {
+            $matrixArray = $this->goldGeneral($matrixArray, $y, $x, $color);
+        } else {
+            switch ($color) {
+                case('white'):
+                    isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
+                    break;
+                case('black'):
+                    isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = "r" : null;
+                    break;
+            }
+        }
         return $matrixArray;
     }
 

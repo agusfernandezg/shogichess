@@ -38,6 +38,26 @@ class Piece
      */
     private $moves;
 
+    /**
+     * @ORM\Column(type="string", length=255)
+     */
+    private $color;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $row;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $col;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Bitboard", inversedBy="piece")
+     */
+    private $bitboard;
+
 
     public function __construct()
     {
@@ -112,6 +132,54 @@ class Piece
                 $move->setPiece(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getColor(): ?string
+    {
+        return $this->color;
+    }
+
+    public function setColor(string $color): self
+    {
+        $this->color = $color;
+
+        return $this;
+    }
+
+    public function getRow(): ?int
+    {
+        return $this->row;
+    }
+
+    public function setRow(int $row): self
+    {
+        $this->row = $row;
+
+        return $this;
+    }
+
+    public function getCol(): ?int
+    {
+        return $this->col;
+    }
+
+    public function setCol(int $col): self
+    {
+        $this->col = $col;
+
+        return $this;
+    }
+
+    public function getBitboard(): ?Bitboard
+    {
+        return $this->bitboard;
+    }
+
+    public function setBitboard(?Bitboard $bitboard): self
+    {
+        $this->bitboard = $bitboard;
 
         return $this;
     }
