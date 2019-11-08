@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Piece index{% endblock %}
+
+{% block body %}
+    <h1>Piece index</h1>
+
+    <table id="pieces_table" class="table table-striped table-bordered table-sm" cellspacing="0" width="100%">
+        <thead>
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Promoted</th>
+            <th>Color</th>
+            <th>Row</th>
+            <th>Col</th>
+            <th>Generator</th>
+            <th>Promotedgenerator</th>
+            <th>actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for piece in pieces %}
+            <tr>
+                <td>{{ piece.id }}</td>
+                <td>{{ piece.name }}</td>
+                <td>{{ piece.code }}</td>
+                <td>{{ piece.promoted ? 'Yes' : 'No' }}</td>
+                <td>{{ piece.color }}</td>
+                <td>{{ piece.row }}</td>
+                <td>{{ piece.col }}</td>
+                <td>{{ piece.generator }}</td>
+                <td>{{ piece.promotedgenerator }}</td>
+                <td>
+                    <a href="{{ path('piece_show', {'id': piece.id}) }}">show</a>
+                    <a href="{{ path('piece_edit', {'id': piece.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="10">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('piece_new') }}">Create new</a>
+
+    <script>
+        $(document).ready(function () {
+            $('#pieces_table').DataTable();
+            $('.dataTables_length').addClass('bs-select');
+        });
+    </script>
+{% endblock %}
