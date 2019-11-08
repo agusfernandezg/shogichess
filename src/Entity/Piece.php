@@ -58,6 +58,16 @@ class Piece
      */
     private $bitboard;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $generator;
+
+    /**
+     * @ORM\Column(type="string", length=255)
+     */
+    private $promotedgenerator;
+
 
     public function __construct()
     {
@@ -180,6 +190,30 @@ class Piece
     public function setBitboard(?Bitboard $bitboard): self
     {
         $this->bitboard = $bitboard;
+
+        return $this;
+    }
+
+    public function getGenerator(): ?string
+    {
+        return $this->generator;
+    }
+
+    public function setGenerator(?string $generator): self
+    {
+        $this->generator = $generator;
+
+        return $this;
+    }
+
+    public function getPromotedgenerator(): ?string
+    {
+        return $this->promotedgenerator;
+    }
+
+    public function setPromotedgenerator(string $promotedgenerator): self
+    {
+        $this->promotedgenerator = $promotedgenerator;
 
         return $this;
     }

@@ -6,6 +6,7 @@ use App\Entity\Matrix;
 use App\Entity\Matriz;
 use App\Entity\Piece;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
 class ChessController extends AbstractController
@@ -43,9 +44,6 @@ class ChessController extends AbstractController
 //
 //$pawn = new Piece();
 //Blacks
-
-
-
 
 
     }
@@ -109,16 +107,35 @@ class ChessController extends AbstractController
     }
 
 
+    public function generatePositionBitboardsByPiece()
+    {
+
+
+    }
+
+
+    public function fromMatrixToBitboard($matrix, $row, $col)
+    {
+        $arrayBitboard = array();
+        for ($i = 0; $i < $row; $i++) {
+            for ($j = 0; $j < $col; $j++) {
+                array_push($arrayBitboard, $matrix[$i][$j]);
+            }
+        }
+
+        return $arrayBitboard;
+    }
+
+
     public function drawBoard($matrixArray, $row, $col)
     {
 
         print_r("<style> .center{text-align: center;}</style>");
-
         print_r("<table>");
         for ($i = 0; $i < $row; $i++) {
             print_r("<tr>");
             for ($j = 0; $j < $col; $j++) {
-                print_r("<td class='center'>" . $matrixArray[$i][$j]) . "<td>";
+                print_r("<td data-row='" . $i . "' data-col='" . $j . "'  class='center cell'>" . $matrixArray[$i][$j]) . "<td>";
             }
             print_r("</tr>");
         }
@@ -128,7 +145,49 @@ class ChessController extends AbstractController
     }
 
 
-    //Doesn't matter if its about Black or White side
+    /**
+     * @Route("/crearPawns", name="crearPawns")
+     */
+    public function crearPawns()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+
+
+        //White
+        for ($i = 0, $j = 2; $i < 9; $i++) {
+            $pawn = new Piece();
+            $pawn->setName('Pawn' . strval($i + 1));
+            $pawn->setCode('pawn_' . strval($i + 1));
+            $pawn->setColor('white');
+            $pawn->setRow($j);
+            $pawn->setCol($i);
+            $pawn->setGenerator('pawn');
+            $pawn->setPromotedgenerator('pawn');
+            $pawn->setPromoted(false);
+            $entityManager->persist($pawn);
+        }
+
+
+        //Black
+        for ($i = 0, $j = 8; $i < 9; $i++) {
+            $pawn = new Piece();
+            $pawn->setName('Pawn' . strval($i + 1));
+            $pawn->setCode('pawn_' . strval($i + 1));
+            $pawn->setColor('black');
+            $pawn->setRow($j);
+            $pawn->setCol($i);
+            $pawn->setGenerator('pawn');
+            $pawn->setPromotedgenerator('pawn');
+            $pawn->setPromoted(false);
+            $entityManager->persist($pawn);
+        }
+        $entityManager->flush();
+
+        return new JsonResponse("ok");
+    }
+
+
+    //Doesn't matter if its  Black or White side
     public function row($matrixArray, $row, $size)
     {
         for ($j = 0; $j < $size; $j++) {
@@ -137,7 +196,7 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    //Doesn't matter if its about Black or White side
+    //Doesn't matter if its  Black or White side
     public function col($matrixArray, $col, $size)
     {
         for ($i = 0; $i < $size; $i++) {
@@ -162,14 +221,13 @@ class ChessController extends AbstractController
                     $matrixArray[$i][$x] = 'C';
                 }
                 break;
-
         }
 
         return $matrixArray;
     }
 
 
-    //Doesn't matter if its about Black or White side
+    //Doesn't matter if its  Black or White side
     public function mainDiagonal($matrixArray, $y, $x)
     {
         for ($i = $y, $j = $x; $i >= 0; $i--, $j++) {
@@ -182,7 +240,7 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    //Doesn't matter if its about Black or White side
+    //Doesn't matter if its  Black or White side
     public function secondaryDiagonal($matrixArray, $y, $x, $row, $col)
     {
         for ($i = $y, $j = $x; $i >= 0 || $j >= 0; $i--, $j--) {
@@ -196,7 +254,7 @@ class ChessController extends AbstractController
     }
 
 
-    //Doesn't matter if its about Black or White side
+    //Doesn't matter if its  Black or White side
     public function king($matrixArray, $y, $x)
     {
         isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = "r" : null;
@@ -211,7 +269,7 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    //Doesn't matter if its about Black or White side
+    //Doesn't matter if its  Black or White side
     public function rook($matrixArray, $y, $x, $size, $promoted = false)
     {
         switch ($promoted) {
@@ -240,7 +298,7 @@ class ChessController extends AbstractController
         return $matrix;
     }
 
-    //Doesn't matter if its about Black or White side
+    //Doesn't matter if its  Black or White side
     public function bishop($matrixArray, $y, $x, $promoted)
     {
 
@@ -264,7 +322,6 @@ class ChessController extends AbstractController
                 isset($matrix[$y][$x - 1]) ? $matrix[$y][$x - 1] = "r" : null;
 
                 break;
-
         }
 
         return $matrix;
