@@ -2,8 +2,7 @@
 
 namespace App\Entity;
 
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -42,6 +41,25 @@ class Bitboard
      * @ORM\Column(type="integer", nullable=true)
      */
     private $col;
+
+    /**
+     * @ORM\Column(type="string", length=27, nullable=true)
+     */
+    private $board1;
+
+    /**
+     * @ORM\Column(type="string", length=27, nullable=true)
+     */
+    private $board2;
+
+    /**
+     * @ORM\Column(type="string", length=27, nullable=true)
+     */
+    private $board3;
+
+
+
+
 
     public function __construct()
     {
@@ -113,4 +131,43 @@ class Bitboard
 
         return $this;
     }
+
+    public function getBoard1(): ?string
+    {
+        return $this->board1;
+    }
+
+    public function setBoard1(?string $board1): self
+    {
+        $this->board1 = $board1;
+
+        return $this;
+    }
+
+    public function getBoard2(): ?string
+    {
+        return $this->board2;
+    }
+
+    public function setBoard2(?string $board2): self
+    {
+        $this->board2 = $board2;
+
+        return $this;
+    }
+
+    public function getBoard3(): ?string
+    {
+        return $this->board3;
+    }
+
+    public function setBoard3(?string $board3): self
+    {
+        $this->board3 = $board3;
+
+        return $this;
+    }
+
+
+
 }

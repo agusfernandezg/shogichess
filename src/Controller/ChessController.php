@@ -164,7 +164,17 @@ class ChessController extends AbstractController
             }
 
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
-            $bitBoardAllPieces->setBitboard(implode($bitBoardArray));
+            $stringArrayBitBoard = implode($bitBoardArray);
+
+            $bitBoardAllPieces->setBitboard($stringArrayBitBoard);
+
+            $stringArrayBitBoard1 = substr($stringArrayBitBoard, 0, 27);
+            $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
+            $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
+
+            $bitBoardAllPieces->setBoard1($stringArrayBitBoard1);
+            $bitBoardAllPieces->setBoard2($stringArrayBitBoard2);
+            $bitBoardAllPieces->setBoard3($stringArrayBitBoard3);
 
             $entityManager->persist($bitBoardAllPieces);
             $entityManager->flush();
@@ -182,23 +192,53 @@ class ChessController extends AbstractController
         $bitBoardPieceActualPosition = new Bitboard();
         $matrix = $this->matrixCreateWithoutModel(9, 9);
 
-        $checkIfAlreadyExiste = $entityManager->getRepository('App:Bitboard')->findOneBy(['piece' => $piece->getCode() . "_current_position"]);
+        $checkIfAlreadyExiste = $entityManager->getRepository('App:Bitboard')->findOneBy([
+            'piece' => $piece,
+            'name' => 'current_position'
+        ]);
 
         $matrix[$row][$col] = 1;
 
         //Si yá existe, lo actualizo a la posición Inicial de la piza, sino creo uno nuevo.
         if ($checkIfAlreadyExiste) {
             $piece->addBitboard($checkIfAlreadyExiste);
-            $checkIfAlreadyExiste->setName($piece->getCode() . "_current_position");
+            $checkIfAlreadyExiste->setRow($row);
+            $checkIfAlreadyExiste->setCol($col);
+
+            $checkIfAlreadyExiste->setName("current_position");
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
-            $checkIfAlreadyExiste->setBitboard(implode($bitBoardArray));
+
+            $stringArrayBitBoard = implode($bitBoardArray);
+            $checkIfAlreadyExiste->setBitboard($stringArrayBitBoard);
+
+            $stringArrayBitBoard1 = substr($stringArrayBitBoard, 0, 27);
+            $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
+            $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
+
+            $checkIfAlreadyExiste->setBoard1($stringArrayBitBoard1);
+            $checkIfAlreadyExiste->setBoard2($stringArrayBitBoard2);
+            $checkIfAlreadyExiste->setBoard3($stringArrayBitBoard3);
+
+
             $entityManager->persist($checkIfAlreadyExiste);
             $entityManager->persist($piece);
         } else {
             $piece->addBitboard($bitBoardPieceActualPosition);
-            $bitBoardPieceActualPosition->setName($piece->getCode() . "_current_position");
+            $bitBoardPieceActualPosition->setRow($row);
+            $bitBoardPieceActualPosition->setCol($col);
+            $bitBoardPieceActualPosition->setName("current_position");
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
-            $bitBoardPieceActualPosition->setBitboard(implode($bitBoardArray));
+            $stringArrayBitBoard = implode($bitBoardArray);
+
+            $bitBoardPieceActualPosition->setBitboard($stringArrayBitBoard);
+            $stringArrayBitBoard1 = substr($stringArrayBitBoard, 0, 27);
+            $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
+            $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
+
+            $bitBoardPieceActualPosition->setBoard1($stringArrayBitBoard1);
+            $bitBoardPieceActualPosition->setBoard2($stringArrayBitBoard2);
+            $bitBoardPieceActualPosition->setBoard3($stringArrayBitBoard3);
+
             $entityManager->persist($bitBoardPieceActualPosition);
             $entityManager->persist($piece);
         }
@@ -228,7 +268,17 @@ class ChessController extends AbstractController
             }
 
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
-            $bitBoardAllPieces->setBitboard(implode($bitBoardArray));
+            $stringArrayBitBoard = implode($bitBoardArray);
+
+            $bitBoardAllPieces->setBitboard($stringArrayBitBoard);
+            $stringArrayBitBoard1 = substr($stringArrayBitBoard, 0, 27);
+            $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
+            $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
+
+            $bitBoardAllPieces->setBoard1($stringArrayBitBoard1);
+            $bitBoardAllPieces->setBoard2($stringArrayBitBoard2);
+            $bitBoardAllPieces->setBoard3($stringArrayBitBoard3);
+
 
             $entityManager->persist($bitBoardAllPieces);
             $entityManager->flush();
@@ -238,7 +288,6 @@ class ChessController extends AbstractController
 
         return new JsonResponse("ok");
     }
-
 
     public function generateBlackPiecesPositionBitBoard()
     {
@@ -257,10 +306,24 @@ class ChessController extends AbstractController
                 $pieceRow = $piece->getRow();
                 $pieceCol = $piece->getCol();
                 $matrix[$pieceRow][$pieceCol] = 1;
+
             }
 
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
-            $bitBoardAllPieces->setBitboard(implode($bitBoardArray));
+
+            $stringArrayBitBoard = implode($bitBoardArray);
+
+            $bitBoardAllPieces->setBitboard($stringArrayBitBoard);
+
+            $stringArrayBitBoard1 = substr($stringArrayBitBoard, 0, 27);
+            $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
+            $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
+
+
+            $bitBoardAllPieces->setBoard1($stringArrayBitBoard1);
+            $bitBoardAllPieces->setBoard2($stringArrayBitBoard2);
+            $bitBoardAllPieces->setBoard3($stringArrayBitBoard3);
+
 
             $entityManager->persist($bitBoardAllPieces);
             $entityManager->flush();
@@ -298,7 +361,20 @@ class ChessController extends AbstractController
                     $matrix = $this->createMatrixPosibleMovements($baseMatrix, $metodoGeneradorString, $promoted, $color, $i, $j);
                     $arrayBitBoard = $this->fromMatrixToBitboard($matrix, 9, 9);
 
-                    $bitboard->setBitboard(implode($arrayBitBoard));
+
+                    $stringArrayBitBoard = implode($arrayBitBoard);
+                    $stringArrayBitBoard1 = substr($stringArrayBitBoard, 0, 27);
+                    $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
+                    $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
+
+                    $bitboard->setBitboard($stringArrayBitBoard);
+
+
+                    $bitboard->setBoard1($stringArrayBitBoard1);
+                    $bitboard->setBoard2($stringArrayBitBoard2);
+                    $bitboard->setBoard3($stringArrayBitBoard3);
+
+
                     $bitboard->setRow($i);
                     $bitboard->setCol($j);
                     $bitboard->setName($piece->getCode());
@@ -391,7 +467,7 @@ class ChessController extends AbstractController
 
 
         //Black
-        for ($i = 0, $j = 8; $i < 9; $i++) {
+        for ($i = 0, $j = 6; $i < 9; $i++) {
             $pawn = new Piece();
             $pawn->setName('Pawn' . strval($i + 1));
             $pawn->setCode('pawn_' . strval($i + 1));

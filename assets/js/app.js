@@ -12,7 +12,6 @@ require('../css/app.css');
 // Need jQuery? Install it with "yarn add jquery", then uncomment to require it.
 const $ = require('jquery');
 
-
 // the bootstrap module doesn't export/return anything
 require('bootstrap');
 
