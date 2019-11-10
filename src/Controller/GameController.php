@@ -113,7 +113,6 @@ class GameController extends AbstractController
             'notRes' => $matrixHtmlNotRes,
             'possibleMovesArray' => $resultado
         ]);
-
     }
 
 
@@ -128,10 +127,10 @@ class GameController extends AbstractController
                 $resultMatrix = $this->kingOverOtherPieces($baseMatrix, $y, $x, $arrayPiecesOwn, $arrayPiecesEnemy);
                 break;
             case "rook":
-                $resultMatrix = $this->rookOverOtherPieces($baseMatrix, $y, $x, 9, $promoted, $arrayPiecesOwn, $arrayPiecesEnemy);
+                $resultMatrix = $this->rookOverOtherPieces($baseMatrix, $y, $x, 9, $color, $promoted, $arrayPiecesOwn, $arrayPiecesEnemy);
                 break;
             case "bishop":
-                $resultMatrix = "";
+                $resultMatrix = $this->bishopOverOtherPieces($baseMatrix, $y, $x, $promoted, $arrayPiecesOwn, $arrayPiecesEnemy);
                 break;
             case "goldGeneral":
                 $resultMatrix = $this->goldGeneralOverOtherPieces($baseMatrix, $y, $x, $color, $arrayPiecesOwn, $arrayPiecesEnemy);
@@ -140,7 +139,7 @@ class GameController extends AbstractController
                 $resultMatrix = $this->silverGeneralOverOtherPieces($baseMatrix, $y, $x, $color, $promoted, $arrayPiecesOwn, $arrayPiecesEnemy);
                 break;
             case "knight":
-                $resultMatrix = $this->kingOverOtherPieces($baseMatrix, $y, $x, $arrayPiecesOwn, $arrayPiecesEnemy);
+                $resultMatrix = $this->knightOverOtherPieces($baseMatrix, $y, $x, $color, $promoted, $arrayPiecesOwn, $arrayPiecesEnemy);
                 break;
             case "lance":
                 $resultMatrix = $this->lanceOverOtherPieces($baseMatrix, $y, $x, $color, $promoted, $arrayPiecesOwn, $arrayPiecesEnemy);
@@ -148,7 +147,6 @@ class GameController extends AbstractController
             case "pawn":
                 $resultMatrix = $this->pawnOverOtherPieces($baseMatrix, $y, $x, $color, $promoted, $arrayPiecesOwn, $arrayPiecesEnemy);
                 break;
-
         }
         return $resultMatrix;
     }
@@ -205,6 +203,52 @@ class GameController extends AbstractController
         ];
     }
 
+    //Doesn't matter if its  Black or White side
+    public function bishopOverOtherPieces($matrixArray, $y, $x, $promoted, $arrayOwnPieces, $arrayEnemyPieces)
+    {
+        $arrayCoordinatesClean = [];
+        $arrayCoordinatesCanEat = [];
+        $arrayPieceMoves = [];
+
+        switch ($promoted) {
+            case false:
+                $matrixDiagonalP = $this->mainDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
+                $matrixDiagonalS = $this->secondaryDiagonal($y, $x, 9, 9, $arrayOwnPieces, $arrayEnemyPieces);
+                break;
+                $arrayPieceMoves = array_merge($matrixDiagonalP, $matrixDiagonalS);
+            case true:
+                $matrixDiagonalP = $this->mainDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
+                $matrixDiagonalS = $this->secondaryDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
+
+                $pieceMovementCoordinates = [
+                    [$y - 1, $x],
+                    [$y, $x + 1],
+                    [$y + 1, $x],
+                    [$y, $x - 1],
+                ];
+
+                $arrayPieceMoves = array_merge($matrixDiagonalP, $matrixDiagonalS, $pieceMovementCoordinates);
+                break;
+        }
+
+
+        foreach ($arrayPieceMoves as $coordinate) {
+            if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
+                if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces)) {
+                    array_push($arrayCoordinatesCanEat, $coordinate);
+                } else {
+                    array_push($arrayCoordinatesClean, $coordinate);
+                }
+            }
+        }
+
+        return [
+            'clear' => $arrayCoordinatesClean,
+            'eat' => $arrayCoordinatesCanEat
+        ];
+    }
+
+
     // Does matter side
     public function lanceOverOtherPieces($matrixArray, $y, $x, $color, $promoted, $arrayOwnPieces, $arrayEnemyPieces)
     {
@@ -214,7 +258,8 @@ class GameController extends AbstractController
         if ($promoted == true) {
             $result = $this->goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces);
         } else {
-            $pieceMovementCoordinates = $this->colForward($matrixArray, $y, $x, 9, $color);
+
+            $pieceMovementCoordinates = $this->colForward($y, $x, 9, $color, $arrayOwnPieces, $arrayEnemyPieces);
 
             foreach ($pieceMovementCoordinates as $coordinate) {
                 if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
@@ -268,7 +313,6 @@ class GameController extends AbstractController
                 'eat' => $arrayCoordinatesCanEat
             ];
         }
-
         return $result;
     }
 
@@ -276,7 +320,6 @@ class GameController extends AbstractController
     // Does matter side non promotional
     public function goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces)
     {
-
         $arrayCoordinatesClean = [];
         $arrayCoordinatesCanEat = [];
 
@@ -322,7 +365,6 @@ class GameController extends AbstractController
     // Does matter side
     public function knightOverOtherPieces($matrixArray, $y, $x, $color, $promoted, $arrayOwnPieces, $arrayEnemyPieces)
     {
-
         if ($promoted == true) {
             $result = $this->goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces);
         } else {
@@ -341,7 +383,6 @@ class GameController extends AbstractController
                     $pieceMovementCoordinates = [
                         [$y - 2, $x - 1],
                         [$y - 2, $x + 1],
-
                     ];
                     break;
             }
@@ -407,6 +448,7 @@ class GameController extends AbstractController
                     }
                 }
             }
+
             $result = [
                 'clear' => $arrayCoordinatesClean,
                 'eat' => $arrayCoordinatesCanEat
@@ -419,7 +461,7 @@ class GameController extends AbstractController
 
 
     //Doesn't matter if its  Black or White side
-    public function rookOverOtherPieces($matrixArray, $y, $x, $size, $promoted = false, $arrayOwnPieces, $arrayEnemyPieces)
+    public function rookOverOtherPieces($matrixArray, $y, $x, $size, $color, $promoted = false, $arrayOwnPieces, $arrayEnemyPieces)
     {
         $arrayCoordinatesClean = [];
         $arrayCoordinatesCanEat = [];
@@ -427,13 +469,13 @@ class GameController extends AbstractController
 
         switch ($promoted) {
             case false:
-                $arrayRow = $this->row($y, $size, $arrayOwnPieces, $arrayEnemyPieces);
-                $arrayCol = $this->col($x, $size, $arrayOwnPieces, $arrayEnemyPieces);
+                $arrayRow = $this->row($y, $y, $size, $arrayOwnPieces, $arrayEnemyPieces);
+                $arrayCol = $this->col($y, $x, $color, $size, $arrayOwnPieces, $arrayEnemyPieces);
                 $arrayPieceMoves = array_merge($arrayRow, $arrayCol);
                 break;
             case true:
-                $arrayRow = $this->row($y, $size, $arrayOwnPieces, $arrayEnemyPieces);
-                $arrayCol = $this->col($x, $size, $arrayOwnPieces, $arrayEnemyPieces);
+                $arrayRow = $this->row($y, $y, $size, $arrayOwnPieces, $arrayEnemyPieces);
+                $arrayCol = $this->col($y, $x, $color, $size, $arrayOwnPieces, $arrayEnemyPieces);
 
                 $pieceMovementCoordinates = [
                     [$y - 1, $x - 1],
@@ -464,44 +506,211 @@ class GameController extends AbstractController
     }
 
 
-    //Doesn't matter if its  Black or White side
-    public function row($row, $size)
+    public function row($y, $x, $size, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinates = array();
-        for ($j = 0; $j < $size; $j++) {
-            array_push($arrayCoordinates, [$row, $j]);
+//        $arrayCoordinates = [];
+//        for ($j = 0; $j < $size; $j++) {
+//            $res = $this->pushArrayCoordinates($row, $j, $arrayOwnPieces, $arrayEnemyPieces);
+//            if (!$res['sigo']) {
+//                break;
+//            } else {
+//                array_push($arrayCoordinates, $res['coord']);
+//            }
+//        }
+//        return $arrayCoordinates;
+
+        $forward = $this->rowForward($y, $x, $size, $arrayOwnPieces, $arrayEnemyPieces);
+        $back = $this->rowBack($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
+
+        return array_merge($forward, $back);
+    }
+
+    public function rowForward($y, $x, $size, $arrayOwnPieces, $arrayEnemyPieces)
+    {
+        $arrayCoordinates = [];
+        for ($j = $x + 1; $j < $size; $j++) {
+            $res = $this->pushArrayCoordinates($y, $j, $arrayOwnPieces, $arrayEnemyPieces);
+            if (!$res['sigo']) {
+                break;
+            } else {
+                array_push($arrayCoordinates, $res['coord']);
+            }
         }
         return $arrayCoordinates;
     }
 
-    //Doesn't matter if its  Black or White side
-    public function col($col, $size)
+    public function rowBack($y, $x, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinates = array();
-        for ($i = 0; $i < $size; $i++) {
-            array_push($arrayCoordinates, [$i, $col]);
+        $arrayCoordinates = [];
+
+        for ($j = $x - 1; $j >= 0; $j--) {
+            $res = $this->pushArrayCoordinates($y, $j, $arrayOwnPieces, $arrayEnemyPieces);
+            if (!$res['sigo']) {
+                break;
+            } else {
+                array_push($arrayCoordinates, $res['coord']);
+            }
         }
+        return $arrayCoordinates;
+    }
+
+
+    //Doesn't matter if its  Black or White side
+    public function col($y, $x, $color, $size, $arrayOwnPieces, $arrayEnemyPieces)
+    {
+//        $arrayCoordinates = [];
+//        for ($i = 0; $i < $size; $i++) {
+//            $res = $this->pushArrayCoordinates($i, $col, $arrayOwnPieces, $arrayEnemyPieces);
+//            if (!$res['sigo']) {
+//                break;
+//            } else {
+//                array_push($arrayCoordinates, $res['coord']);
+//            }
+//        }
+
+
+        $forward = $this->colForward($y, $x, $size, $color, $arrayOwnPieces, $arrayEnemyPieces);
+        $down = $this->colDown($y, $x, $size, $color, $arrayOwnPieces, $arrayEnemyPieces);
+
+        $res = array_merge($forward, $down);
+
+        return $res;
+    }
+
+
+    //Doesn't matter if its  Black or White side
+    public function mainDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces)
+    {
+        $arrayCoordinates = [];
+        for ($i = $y, $j = $x; $i >= 0; $i--, $j++) {
+            $res = $this->pushArrayCoordinates($i, $j, $arrayOwnPieces, $arrayEnemyPieces);
+            if (!$res['sigo']) {
+                break;
+            } else {
+                array_push($arrayCoordinates, $res['coord']);
+            }
+        }
+
+        for ($j = $x, $i = $y; $j >= 0; $i++, $j--) {
+            $res = $this->pushArrayCoordinates($i, $j, $arrayOwnPieces, $arrayEnemyPieces);
+            if (!$res['sigo']) {
+                break;
+            } else {
+                array_push($arrayCoordinates, $res['coord']);
+            }
+        }
+
+        return $arrayCoordinates;
+    }
+
+    //Doesn't matter if its  Black or White side
+    public function secondaryDiagonal($y, $x, $row, $col, $arrayOwnPieces, $arrayEnemyPieces)
+    {
+        $arrayCoordinates = [];
+        for ($i = $y, $j = $x; $i >= 0 || $j >= 0; $i--, $j--) {
+            $res = $this->pushArrayCoordinates($i, $j, $arrayOwnPieces, $arrayEnemyPieces);
+            if (!$res['sigo']) {
+                break;
+            } else {
+                array_push($arrayCoordinates, $res['coord']);
+            }
+        }
+
+        for ($i = $y, $j = $x; $i <= $row || $j <= $col; $i++, $j++) {
+            $res = $this->pushArrayCoordinates($i, $j, $arrayOwnPieces, $arrayEnemyPieces);
+            if (!$res['sigo']) {
+                break;
+            } else {
+                array_push($arrayCoordinates, $res['coord']);
+            }
+        }
+
+        return $arrayCoordinates;
+    }
+
+
+    // Does matter side
+    public function colForward($y, $x, $size, $color, $arrayOwnPieces, $arrayEnemyPieces)
+    {
+        $arrayCoordinates = [];
+        switch ($color) {
+            case('white'):
+                for ($i = $y + 1; $i <= $size; $i++) {
+                    $res = $this->pushArrayCoordinates($i, $x, $arrayOwnPieces, $arrayEnemyPieces);
+                    if (!$res['sigo']) {
+                        break;
+                    } else {
+                        array_push($arrayCoordinates, $res['coord']);
+                    }
+                }
+                break;
+            case('black'):
+                for ($i = $y - 1; $i >= 0; $i--) {
+                    $res = $this->pushArrayCoordinates($i, $x, $arrayOwnPieces, $arrayEnemyPieces);
+                    if (!$res['sigo']) {
+                        break;
+                    } else {
+                        array_push($arrayCoordinates, $res['coord']);
+                    }
+                }
+                break;
+        }
+
+
         return $arrayCoordinates;
     }
 
     // Does matter side
-    public function colForward($matrixArray, $y, $x, $size, $color)
+    public function colDown($y, $x, $size, $color, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinates = array();
+        $arrayCoordinates = [];
         switch ($color) {
             case('white'):
-                for ($i = $y; $i <= $size; $i++) {
-                    array_push($arrayCoordinates, [$i, $x]);
+                for ($i = $y - 1; $i >= 0; $i--) {
+                    $res = $this->pushArrayCoordinates($i, $x, $arrayOwnPieces, $arrayEnemyPieces);
+                    if (!$res['sigo']) {
+                        break;
+                    } else {
+                        array_push($arrayCoordinates, $res['coord']);
+                    }
                 }
                 break;
             case('black'):
-                for ($i = $y; $i >= 0; $i--) {
-                    array_push($arrayCoordinates, [$i, $x]);
+                for ($i = $y + 1; $i <= $size; $i++) {
+                    $res = $this->pushArrayCoordinates($i, $x, $arrayOwnPieces, $arrayEnemyPieces);
+                    if (!$res['sigo']) {
+                        break;
+                    } else {
+                        array_push($arrayCoordinates, $res['coord']);
+                    }
                 }
                 break;
         }
 
+
         return $arrayCoordinates;
+    }
+
+
+    public function pushArrayCoordinates($y, $x, $arrayOwnPieces, $arrayEnemyPieces)
+    {
+        $coord = null;
+
+        if (array_search([$y, $x], $arrayOwnPieces) !== false) {
+            $sigo = false;
+        } elseif (array_search([$y, $x], $arrayEnemyPieces) !== false) {
+            $coord = [$y, $x];
+            $sigo = false;
+        } else {
+            $coord = [$y, $x];
+            $sigo = true;
+        }
+
+        return [
+            'sigo' => $sigo,
+            'coord' => $coord
+        ];
+
     }
 
 
