@@ -19,10 +19,12 @@
         .red {
             color: #b0413e;
         }
-        .possible{
+
+        .possible {
             color: blue;
         }
-        .eatable{
+
+        .eatable {
             color: darkred;
         }
 
@@ -123,21 +125,33 @@
             const make_move = document.getElementById('make_move');
 
             make_move.addEventListener('click', function () {
-
                 let id_piece = document.getElementById('piece_id').value;
-                let row = document.getElementById('row_to').value;
-                let col = document.getElementById('col_to').value;
+                let row_to = document.getElementById('row_to').value;
+                let col_to = document.getElementById('col_to').value;
+                make_move.disabled = true;
 
-                if (id_piece != '' && row != '' && col != '') {
-                    document.getElementById('alert_datos').style.display = 'none';
-                    make_move.disabled = true;
-                    sendMove(id_piece);
-                    make_move.disabled = false;
-                } else {
-                    document.getElementById('alert_datos').style.display = 'block';
-                }
+                makeMove(id_piece, row_to, col_to);
 
+                make_move.disabled = false;
             });
+
+
+            function makeMove(id_piece, row_to, col_to) {
+                document.getElementsByClassName('is-fetching')[0].style.display = 'block';
+                var httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = function (data) {
+                    if (httpRequest.readyState === 4) {
+                        document.getElementsByClassName('is-fetching')[0].style.display = 'none';
+                        const resultObject = JSON.parse(httpRequest.response);
+
+                        console.log(resultObject);
+                    }
+                };
+
+                httpRequest.open('POST', '{{ path('make_move') }}')
+                httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+                httpRequest.send('id_piece=' + id_piece + '&row_to=' + row_to + '&col_to=' + col_to)
+            }
 
 
             function sendMove(id_piece) {
@@ -146,8 +160,9 @@
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
                         document.getElementsByClassName('is-fetching')[0].style.display = 'none';
-                        const resultObject = JSON.parse(httpRequest.response);
+                        clearBoard("move_to_table");
 
+                        const resultObject = JSON.parse(httpRequest.response);
                         const own_pieces_div = document.getElementById('own_pieces_board');
                         const enemy_pieces_div = document.getElementById('enemy_pieces_div');
                         const piece_moves_div = document.getElementById('piece_moves');
@@ -157,21 +172,18 @@
                         const possibleMovesClear = resultObject.possibleMovesArray.clear;
                         const possibleMovesEat = resultObject.possibleMovesArray.eat;
 
-                        console.log(possibleMovesClear)
-                        console.log(possibleMovesEat)
 
                         for (let key in possibleMovesClear) {
                             let obj = possibleMovesClear[key];
                             let id = "" + obj[0] + obj[1];
                             document.getElementById(id).classList.add("possible");
-
                         }
+
                         for (let key in possibleMovesEat) {
                             let obj = possibleMovesEat[key];
                             let id = "" + obj[0] + obj[1];
                             document.getElementById(id).classList.add("eatable");
                         }
-
 
                         own_pieces_div.innerHTML = resultObject.ownPieces;
                         piece_moves_div.innerHTML = resultObject.possibleMoves;
@@ -186,6 +198,17 @@
                 httpRequest.send('id_piece=' + id_piece)
             }
 
+            function clearBoard(table) {
+                var row = document.getElementById('move_to_table').rows;
+                var y;
+                for (var i = 0; i < row.length; i++) {
+                    for (var j = 0; j < row[i].cells.length; j++) {
+                        y = row[i].cells;
+                        y[j].classList.remove('possible', 'eatable');
+                    }
+                }
+            }
+
 
             clickCell();
 
@@ -198,7 +221,7 @@
                             let row = this.getAttribute("data-row");
                             let col = this.getAttribute("data-col");
                             let id_piece = this.getAttribute("data-piece");
-                            setRowCol(row, col, id_piece);
+                            setRowCol(row, col, id_piece,);
                         })
                     }
                 }
@@ -207,9 +230,20 @@
             function setRowCol(row, col, id_piece) {
                 if (id_piece != "") {
                     document.getElementById('piece_id').value = id_piece;
+                    document.getElementById('alert_datos').style.display = 'none';
+                    make_move.disabled = true;
+                    sendMove(id_piece);
+                    make_move.disabled = false;
                 } else {
-                    document.getElementById('row_to').value = row;
-                    document.getElementById('col_to').value = col;
+                    let id_celda = row + col;
+                    let celda = document.getElementById(id_celda);
+                    if (celda.classList.contains('possible')) {
+                        document.getElementById('row_to').value = row;
+                        document.getElementById('col_to').value = col;
+                    } else {
+                        alert("No es una posición válida para mover");
+                    }
+
                 }
             }
 

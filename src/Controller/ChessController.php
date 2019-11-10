@@ -23,48 +23,67 @@ class ChessController extends AbstractController
     }
 
 
-    public function startTheGame()
+    /**
+     * @Route("/makeMove", name="make_move")
+     */
+    public function makeMove()
     {
+        $entityManager = $this->getDoctrine()->getManager();
+        $request = $this->get('request_stack')->getCurrentRequest();
+        $id_piece = $request->get('id_piece');
+        $row_to = $request->get('row_to');
+        $col_to = $request->get('col_to');
+
+        //Get Piece
+        $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
+
+        $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
+
+        return new JsonResponse("ok");
+    }
 
 
+    public function generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to)
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+
+        //I change the current piece "current_position_bitboard
+        $this->generateBitBoardInitialPositionPerPiece($piece, $row_to, $col_to);
+
+        //Generate a BitBoard with all the pieces in the initial position
+        $this->generateAllPiecesPositionBitBoardByCurrentPositionBitboards();
+
+        //Generate a BitBoard with all the WHITE pieces in the initial position
+        $this->generateWhitePiecesPositionBitBoardByCurrentPositionBitboards();
+
+        //Generate a BitBoard with all the BLACK pieces in the initial position
+        $this->generateBlackPiecesPositionBitBoardByCurrentPositionBitboards();
+
+        die("Listo");
     }
 
 
     /**
-     * @Route("/board", name="board")
+     * @Route("/generateAllBitBoards", name="generate_all_bit_boards")
      */
-    public function createBoard()
+    public function generateAllBitBoards()
     {
-        $boardModel = new Matrix();
-        $boardModel->setName("board");
-        $boardModel->setRow(9);
-        $boardModel->setCol(9);
+        $entityManager = $this->getDoctrine()->getManager();
+        $pieces = $entityManager->getRepository('App\Entity\Piece')->findAll();
 
-        $boardArray = $this->matrixCreate($boardModel);
-        $this->drawBoard($boardArray, 9, 9);
-        print_r("<br>");
+        foreach ($pieces as $piece) {
+            $this->generatePositionBitboardsByPiece($piece, 9, 9);
+        }
+        //Generate a BitBoard with all the pieces in the initial position
+        $this->generateAllPiecesPositionBitBoard();
 
-//        $newBoardF = $this->row($boardArray, 5, 9);
-//        $this->drawBoard($newBoardF, 9, 9);
-//        print_r("<br>");
-//
-//        $newBoardC = $this->col($boardArray, 5, 9);
-//        $this->drawBoard($newBoardC, 9, 9);
-//
-//        print_r("<br>");
-//        $newBoardDP = $this->diagonalPrincipal($boardArray, 5, 5);
-//        $this->drawBoard($newBoardDP, 9, 9);
-//
-//        print_r("<br>");
-//        $newBoardDS = $this->diagonalSecundaria($boardArray, 5, 5, 9, 9);
-//        $this->drawBoard($newBoardDS, 9, 9);
-//
-//        print_r("<br>");
-//        $newBoardKing = $this->pawn($boardArray, 5, 3);
-//        $this->drawBoard($newBoardKing, 9, 9);
+        //Generate a BitBoard with all the WHITE pieces in the initial position
+        $this->generateWhitePiecesPositionBitBoard();
 
-        die();
-        //return new JsonResponse("Punck");
+        //Generate a BitBoard with all the BLACK pieces in the initial position
+        $this->generateBlackPiecesPositionBitBoard();
+
+        die("Listo");
     }
 
 
@@ -83,7 +102,6 @@ class ChessController extends AbstractController
                 $matrixArray[$i][$j] = "(" . $i . ';' . $j . ")";
             }
         }
-
         return $matrixArray;
     }
 
@@ -95,13 +113,11 @@ class ChessController extends AbstractController
     public function matrixCreateWithoutModel($row, $col)
     {
         $matrixArray = array();
-
         for ($i = 0; $i < $row; $i++) {
             for ($j = 0; $j < $col; $j++) {
                 $matrixArray[$i][$j] = 0;
             }
         }
-
         return $matrixArray;
     }
 
@@ -113,34 +129,7 @@ class ChessController extends AbstractController
                 array_push($arrayBitboard, $matrix[$i][$j]);
             }
         }
-
         return $arrayBitboard;
-    }
-
-
-    /**
-     * @Route("/generateAllBitBoards", name="generate_all_bit_boards")
-     */
-    public function generateAllBitBoards()
-    {
-
-        $entityManager = $this->getDoctrine()->getManager();
-        $pieces = $entityManager->getRepository('App\Entity\Piece')->findAll();
-
-        foreach ($pieces as $piece) {
-            $this->generatePositionBitboardsByPiece($piece, 9, 9);
-        }
-
-        //Generate a BitBoard with all the pieces in the initial position
-        $this->generateAllPiecesPositionBitBoard();
-
-        //Generate a BitBoard with all the WHITE pieces in the initial position
-        $this->generateWhitePiecesPositionBitBoard();
-
-        //Generate a BitBoard with all the BLACK pieces in the initial position
-        $this->generateBlackPiecesPositionBitBoard();
-
-        die("Listo");
     }
 
 
@@ -178,15 +167,141 @@ class ChessController extends AbstractController
 
             $entityManager->persist($bitBoardAllPieces);
             $entityManager->flush();
+
         } else {
 
         }
+        return new JsonResponse("ok");
+    }
+
+
+    public function generateAllPiecesPositionBitBoardByCurrentPositionBitboards()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+
+        $allPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_pieces']);
+        $currentPositionPiecesBitboards = $entityManager->getRepository('App:Bitboard')->findBy(['name' => 'current_position']);
+
+        $entityManager->remove($allPiecesBitboard);
+        $entityManager->flush();
+
+        $bitBoardAllPieces = new Bitboard();
+        $matrix = $this->matrixCreateWithoutModel(9, 9);
+        $bitBoardAllPieces->setName('all_pieces');
+
+        foreach ($currentPositionPiecesBitboards as $currentPositionBitboard) {
+            $pieceRow = $currentPositionBitboard->getRow();
+            $pieceCol = $currentPositionBitboard->getCol();
+            $matrix[$pieceRow][$pieceCol] = 1;
+        }
+
+        $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
+        $stringArrayBitBoard = implode($bitBoardArray);
+
+        $bitBoardAllPieces->setBitboard($stringArrayBitBoard);
+
+        $stringArrayBitBoard1 = substr($stringArrayBitBoard, 0, 27);
+        $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
+        $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
+
+        $bitBoardAllPieces->setBoard1($stringArrayBitBoard1);
+        $bitBoardAllPieces->setBoard2($stringArrayBitBoard2);
+        $bitBoardAllPieces->setBoard3($stringArrayBitBoard3);
+
+        $entityManager->persist($bitBoardAllPieces);
+        $entityManager->flush();
+
 
         return new JsonResponse("ok");
     }
 
 
-    public function generateBitBoardInitialPositionPerPiece($piece, $row, $col)
+    public function generateWhitePiecesPositionBitBoardByCurrentPositionBitboards()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+
+        $allWhitePiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_white_pieces']);
+        $currentPositionPiecesBitboards = $entityManager->getRepository('App:Bitboard')->findBy(['name' => 'current_position']);
+
+        $entityManager->remove($allWhitePiecesBitboard);
+        $entityManager->flush();
+
+        $bitBoardAllPieces = new Bitboard();
+        $matrix = $this->matrixCreateWithoutModel(9, 9);
+        $bitBoardAllPieces->setName('all_white_pieces');
+
+        foreach ($currentPositionPiecesBitboards as $currentPositionBitboard) {
+            $pieceRow = $currentPositionBitboard->getRow();
+            $pieceCol = $currentPositionBitboard->getCol();
+            $matrix[$pieceRow][$pieceCol] = 1;
+        }
+
+        $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
+        $stringArrayBitBoard = implode($bitBoardArray);
+
+        $bitBoardAllPieces->setBitboard($stringArrayBitBoard);
+        $stringArrayBitBoard1 = substr($stringArrayBitBoard, 0, 27);
+        $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
+        $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
+
+        $bitBoardAllPieces->setBoard1($stringArrayBitBoard1);
+        $bitBoardAllPieces->setBoard2($stringArrayBitBoard2);
+        $bitBoardAllPieces->setBoard3($stringArrayBitBoard3);
+
+
+        $entityManager->persist($bitBoardAllPieces);
+        $entityManager->flush();
+
+
+        return new JsonResponse("ok");
+    }
+
+    public function generateBlackPiecesPositionBitBoardByCurrentPositionBitboards()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+
+
+        $allBlackPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_black_pieces']);
+        $currentPositionPiecesBitboards = $entityManager->getRepository('App:Bitboard')->findBy(['name' => 'current_position']);
+
+        $entityManager->remove($allBlackPiecesBitboard);
+        $entityManager->flush();
+
+        $bitBoardAllPieces = new Bitboard();
+        $matrix = $this->matrixCreateWithoutModel(9, 9);
+        $bitBoardAllPieces->setName('all_black_pieces');
+
+        foreach ($currentPositionPiecesBitboards as $currentPositionBitboard) {
+            $pieceRow = $currentPositionBitboard->getRow();
+            $pieceCol = $currentPositionBitboard->getCol();
+            $matrix[$pieceRow][$pieceCol] = 1;
+        }
+
+        $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
+
+        $stringArrayBitBoard = implode($bitBoardArray);
+
+        $bitBoardAllPieces->setBitboard($stringArrayBitBoard);
+
+        $stringArrayBitBoard1 = substr($stringArrayBitBoard, 0, 27);
+        $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
+        $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
+
+        $bitBoardAllPieces->setBoard1($stringArrayBitBoard1);
+        $bitBoardAllPieces->setBoard2($stringArrayBitBoard2);
+        $bitBoardAllPieces->setBoard3($stringArrayBitBoard3);
+
+
+        $entityManager->persist($bitBoardAllPieces);
+        $entityManager->flush();
+
+
+        return new JsonResponse("ok");
+    }
+
+
+    public
+    function generateBitBoardInitialPositionPerPiece($piece, $row, $col)
     {
         $entityManager = $this->getDoctrine()->getManager();
         $bitBoardPieceActualPosition = new Bitboard();
@@ -248,7 +363,8 @@ class ChessController extends AbstractController
     }
 
 
-    public function generateWhitePiecesPositionBitBoard()
+    public
+    function generateWhitePiecesPositionBitBoard()
     {
         $entityManager = $this->getDoctrine()->getManager();
         $pieces = $entityManager->getRepository('App\Entity\Piece')->findBy(array('color' => 'white'));
@@ -289,7 +405,8 @@ class ChessController extends AbstractController
         return new JsonResponse("ok");
     }
 
-    public function generateBlackPiecesPositionBitBoard()
+    public
+    function generateBlackPiecesPositionBitBoard()
     {
         $entityManager = $this->getDoctrine()->getManager();
         $pieces = $entityManager->getRepository('App\Entity\Piece')->findBy(array('color' => 'black'));
@@ -318,7 +435,6 @@ class ChessController extends AbstractController
             $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
             $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
 
-
             $bitBoardAllPieces->setBoard1($stringArrayBitBoard1);
             $bitBoardAllPieces->setBoard2($stringArrayBitBoard2);
             $bitBoardAllPieces->setBoard3($stringArrayBitBoard3);
@@ -329,12 +445,12 @@ class ChessController extends AbstractController
         } else {
 
         }
-
         return new JsonResponse("ok");
     }
 
 
-    public function generatePositionBitboardsByPiece($piece, $row, $col)
+    public
+    function generatePositionBitboardsByPiece($piece, $row, $col)
     {
         $metodoGeneradorString = $piece->getGenerator();
         $entityManager = $this->getDoctrine()->getManager();
@@ -387,7 +503,8 @@ class ChessController extends AbstractController
     }
 
 
-    public function createMatrixPosibleMovements($baseMatrix, $metodoGeneradorString, $promoted, $color, $y, $x)
+    public
+    function createMatrixPosibleMovements($baseMatrix, $metodoGeneradorString, $promoted, $color, $y, $x)
     {
         $resultMatrix = null;
         switch ($metodoGeneradorString) {
@@ -421,7 +538,8 @@ class ChessController extends AbstractController
     }
 
 
-    public function drawBoard($matrixArray, $row, $col)
+    public
+    function drawBoard($matrixArray, $row, $col)
     {
 
         print_r("<style> .center{text-align: center;}</style>");
@@ -442,7 +560,8 @@ class ChessController extends AbstractController
     /**
      * @Route("/crearPawns", name="crearPawns")
      */
-    public function crearPawns()
+    public
+    function crearPawns()
     {
         $entityManager = $this->getDoctrine()->getManager();
 
@@ -480,8 +599,9 @@ class ChessController extends AbstractController
     }
 
 
-    //Doesn't matter if its  Black or White side
-    public function row($matrixArray, $row, $size)
+//Doesn't matter if its  Black or White side
+    public
+    function row($matrixArray, $row, $size)
     {
         for ($j = 0; $j < $size; $j++) {
             $matrixArray[$row][$j] = 1;
@@ -489,8 +609,9 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    //Doesn't matter if its  Black or White side
-    public function col($matrixArray, $col, $size)
+//Doesn't matter if its  Black or White side
+    public
+    function col($matrixArray, $col, $size)
     {
         for ($i = 0; $i < $size; $i++) {
             $matrixArray[$i][$col] = 1;
@@ -498,8 +619,9 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    // Does matter side
-    public function colForward($matrixArray, $y, $x, $size, $color)
+// Does matter side
+    public
+    function colForward($matrixArray, $y, $x, $size, $color)
     {
         switch ($color) {
             case('white'):
@@ -518,8 +640,9 @@ class ChessController extends AbstractController
     }
 
 
-    //Doesn't matter if its  Black or White side
-    public function mainDiagonal($matrixArray, $y, $x)
+//Doesn't matter if its  Black or White side
+    public
+    function mainDiagonal($matrixArray, $y, $x)
     {
         for ($i = $y, $j = $x; $i >= 0; $i--, $j++) {
             $matrixArray[$i][$j] = 1;
@@ -531,8 +654,9 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    //Doesn't matter if its  Black or White side
-    public function secondaryDiagonal($matrixArray, $y, $x, $row, $col)
+//Doesn't matter if its  Black or White side
+    public
+    function secondaryDiagonal($matrixArray, $y, $x, $row, $col)
     {
         for ($i = $y, $j = $x; $i >= 0 || $j >= 0; $i--, $j--) {
             $matrixArray[$i][$j] = 1;
@@ -545,8 +669,9 @@ class ChessController extends AbstractController
     }
 
 
-    //Doesn't matter if its  Black or White side
-    public function king($matrixArray, $y, $x)
+//Doesn't matter if its  Black or White side
+    public
+    function king($matrixArray, $y, $x)
     {
         isset($matrixArray[$y - 1][$x - 1]) ? $matrixArray[$y - 1][$x - 1] = 1 : null;
         isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = 1 : null;
@@ -560,8 +685,9 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    //Doesn't matter if its  Black or White side
-    public function rook($matrixArray, $y, $x, $size, $promoted = false)
+//Doesn't matter if its  Black or White side
+    public
+    function rook($matrixArray, $y, $x, $size, $promoted = false)
     {
         switch ($promoted) {
 
@@ -589,8 +715,9 @@ class ChessController extends AbstractController
         return $matrix;
     }
 
-    //Doesn't matter if its  Black or White side
-    public function bishop($matrixArray, $y, $x, $promoted)
+//Doesn't matter if its  Black or White side
+    public
+    function bishop($matrixArray, $y, $x, $promoted)
     {
 
         switch ($promoted) {
@@ -618,8 +745,9 @@ class ChessController extends AbstractController
         return $matrix;
     }
 
-    // Does matter side non promotional
-    public function goldGeneral($matrixArray, $y, $x, $color)
+// Does matter side non promotional
+    public
+    function goldGeneral($matrixArray, $y, $x, $color)
     {
         switch ($color) {
 
@@ -651,8 +779,9 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    // Does matter side
-    public function silverGeneral($matrixArray, $y, $x, $color, $promoted)
+// Does matter side
+    public
+    function silverGeneral($matrixArray, $y, $x, $color, $promoted)
     {
 
         if ($promoted == true) {
@@ -690,8 +819,9 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    // Does matter side
-    public function knight($matrixArray, $y, $x, $color, $promoted)
+// Does matter side
+    public
+    function knight($matrixArray, $y, $x, $color, $promoted)
     {
         if ($promoted == true) {
             $matrixArray = $this->goldGeneral($matrixArray, $y, $x, $color);
@@ -715,8 +845,9 @@ class ChessController extends AbstractController
         return $matrixArray;
     }
 
-    // Does matter side
-    public function lance($matrixArray, $y, $x, $color, $promoted)
+// Does matter side
+    public
+    function lance($matrixArray, $y, $x, $color, $promoted)
     {
         if ($promoted == true) {
             $matrix = $this->goldGeneral($matrixArray, $y, $x, $color);
@@ -727,8 +858,9 @@ class ChessController extends AbstractController
     }
 
 
-    // Does matter side
-    public function pawn($matrixArray, $y, $x, $color, $promoted)
+// Does matter side
+    public
+    function pawn($matrixArray, $y, $x, $color, $promoted)
     {
         if ($promoted == true) {
             $matrixArray = $this->goldGeneral($matrixArray, $y, $x, $color);

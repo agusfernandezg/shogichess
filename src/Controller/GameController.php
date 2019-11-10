@@ -33,6 +33,8 @@ class GameController extends AbstractController
     }
 
 
+
+
     /**
      * Esta función, diciendole de que pieza se trata, me dice que movimientos puedo hacer
      * @Route("/movePiece", name="move_piece")
@@ -41,7 +43,6 @@ class GameController extends AbstractController
     {
         $entityManager = $this->getDoctrine()->getManager();
         $request = $this->get('request_stack')->getCurrentRequest();
-
         $id_piece = $request->get('id_piece');
 
         //Get Piece
