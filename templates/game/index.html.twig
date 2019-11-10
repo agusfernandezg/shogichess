@@ -1,0 +1,217 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Shogi{% endblock %}
+
+{% block body %}
+    <style>
+        .example-wrapper {
+            margin: 1em auto;
+            max-width: 800px;
+            width: 95%;
+            font: 18px/1.5 sans-serif;
+        }
+
+        .example-wrapper code {
+            background: #F5F5F5;
+            padding: 2px 6px;
+        }
+
+        .red {
+            color: #b0413e;
+        }
+        .possible{
+            color: blue;
+        }
+        .eatable{
+            color: darkred;
+        }
+
+    </style>
+
+    <div class="example-wrapper">
+        <h1>Game Shogi ✅</h1>
+
+        <div class="row">
+            <div class="col-6">
+                <div class="row">
+                    <div class="col-12">
+                        {{ board | raw }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label>Piece</label>
+                            <input class="form-control" id="piece_id" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Row To</label>
+                            <input class="form-control" id="row_to" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Col To</label>
+                            <input class="form-control" id="col_to" disabled>
+                        </div>
+                        <div id="alert_datos" class="alert  alert-warning alert-dismissible fade show">
+                            <strong>Completar movimiento!</strong> Por Favor seleccione pieza y destino.
+                        </div>
+                        <div class="form-group">
+                            <button class="form-control succes" id="make_move">
+                                <span class="spinner-border spinner-border-sm is-fetching" role="status"
+                                      aria-hidden="true"></span>
+                                Make Move
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6">
+                <div class="row">
+                    <div class="col-6">
+                        <label>Possible piece Moves</label>
+                        <div id="piece_moves">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <label>Own Pieces</label>
+                        <div id="own_pieces_board">
+                        </div>
+                    </div>
+                </div>
+                <hr>
+
+                <div class="row">
+                    <div class="col-6">
+                        <label>Enemy Pieces</label>
+                        <div id="enemy_pieces_div">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <label>Result</label>
+                        <div id="result">
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <label>Not Res</label>
+                        <div id="not_res_pieces_board">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        {#                        <label>And Result</label>#}
+                        {#                        <div id="result">#}
+                        {#                        </div>#}
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+
+        (function () {
+
+            document.getElementById('alert_datos').style.display = 'none';
+            document.getElementsByClassName('is-fetching')[0].style.display = 'none';
+
+            const make_move = document.getElementById('make_move');
+
+            make_move.addEventListener('click', function () {
+
+                let id_piece = document.getElementById('piece_id').value;
+                let row = document.getElementById('row_to').value;
+                let col = document.getElementById('col_to').value;
+
+                if (id_piece != '' && row != '' && col != '') {
+                    document.getElementById('alert_datos').style.display = 'none';
+                    make_move.disabled = true;
+                    sendMove(id_piece);
+                    make_move.disabled = false;
+                } else {
+                    document.getElementById('alert_datos').style.display = 'block';
+                }
+
+            });
+
+
+            function sendMove(id_piece) {
+                document.getElementsByClassName('is-fetching')[0].style.display = 'block';
+                var httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = function (data) {
+                    if (httpRequest.readyState === 4) {
+                        document.getElementsByClassName('is-fetching')[0].style.display = 'none';
+                        const resultObject = JSON.parse(httpRequest.response);
+
+                        const own_pieces_div = document.getElementById('own_pieces_board');
+                        const enemy_pieces_div = document.getElementById('enemy_pieces_div');
+                        const piece_moves_div = document.getElementById('piece_moves');
+                        const result_div = document.getElementById('result');
+                        const not_res_pieces_board = document.getElementById('not_res_pieces_board');
+
+                        const possibleMovesClear = resultObject.possibleMovesArray.clear;
+                        const possibleMovesEat = resultObject.possibleMovesArray.eat;
+
+                        for (let key in possibleMovesClear) {
+                            let obj = possibleMovesClear[key];
+                            let id = "" + obj[0] + obj[1];
+                            document.getElementById(id).classList.add("possible");
+
+                        }
+                        for (let key in possibleMovesEat) {
+                            let obj = possibleMovesEat[key];
+                            let id = "" + obj[0] + obj[1];
+                            document.getElementById(id).classList.add("eatable");
+                        }
+
+
+                        own_pieces_div.innerHTML = resultObject.ownPieces;
+                        piece_moves_div.innerHTML = resultObject.possibleMoves;
+                        result_div.innerHTML = resultObject.res;
+                        enemy_pieces_div.innerHTML = resultObject.enemyPieces;
+                        not_res_pieces_board.innerHTML = resultObject.notRes;
+                    }
+                };
+
+                httpRequest.open('POST', '{{ path('move_piece') }}')
+                httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+                httpRequest.send('id_piece=' + id_piece)
+            }
+
+
+            clickCell();
+
+            function clickCell() {
+                var row = document.getElementById('move_to_table').rows;
+                for (var i = 0; i < row.length; i++) {
+                    for (var j = 0; j < row[i].cells.length; j++) {
+                        //console.log(row[i].cells[j].innerHTML);
+                        row[i].cells[j].addEventListener('click', function (e) {
+                            let row = this.getAttribute("data-row");
+                            let col = this.getAttribute("data-col");
+                            let id_piece = this.getAttribute("data-piece");
+                            setRowCol(row, col, id_piece);
+                        })
+                    }
+                }
+            }
+
+            function setRowCol(row, col, id_piece) {
+                if (id_piece != "") {
+                    document.getElementById('piece_id').value = id_piece;
+                } else {
+                    document.getElementById('row_to').value = row;
+                    document.getElementById('col_to').value = col;
+                }
+            }
+
+
+        })();
+    </script>
+
+{% endblock %}
