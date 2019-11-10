@@ -306,7 +306,6 @@ class ChessController extends AbstractController
                 $pieceRow = $piece->getRow();
                 $pieceCol = $piece->getCol();
                 $matrix[$pieceRow][$pieceCol] = 1;
-
             }
 
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
@@ -337,9 +336,7 @@ class ChessController extends AbstractController
 
     public function generatePositionBitboardsByPiece($piece, $row, $col)
     {
-
         $metodoGeneradorString = $piece->getGenerator();
-
         $entityManager = $this->getDoctrine()->getManager();
 
         for ($i = 0; $i < $row; $i++) {
@@ -369,11 +366,9 @@ class ChessController extends AbstractController
 
                     $bitboard->setBitboard($stringArrayBitBoard);
 
-
                     $bitboard->setBoard1($stringArrayBitBoard1);
                     $bitboard->setBoard2($stringArrayBitBoard2);
                     $bitboard->setBoard3($stringArrayBitBoard3);
-
 
                     $bitboard->setRow($i);
                     $bitboard->setCol($j);
@@ -507,15 +502,13 @@ class ChessController extends AbstractController
     public function colForward($matrixArray, $y, $x, $size, $color)
     {
         switch ($color) {
-
             case('white'):
-                for ($i = $y; $i >= 0; $i--) {
+                for ($i = $y; $i <= $size; $i++) {
                     $matrixArray[$i][$x] = 1;
                 }
                 break;
-
             case('black'):
-                for ($i = $y; $i <= $size; $i++) {
+                for ($i = $y; $i >= 0; $i--) {
                     $matrixArray[$i][$x] = 1;
                 }
                 break;
@@ -706,8 +699,8 @@ class ChessController extends AbstractController
             switch ($color) {
 
                 case('white'):
-                    isset($matrixArray[$y + 2][$x + 1]) ? $matrixArray[$y - 2][$x - 1] = 1 : null;
-                    isset($matrixArray[$y + 2][$x - 1]) ? $matrixArray[$y - 2][$x + 1] = 1 : null;
+                    isset($matrixArray[$y + 2][$x + 1]) ? $matrixArray[$y + 2][$x + 1] = 1 : null;
+                    isset($matrixArray[$y + 2][$x - 1]) ? $matrixArray[$y + 2][$x - 1] = 1 : null;
 
                     break;
 
