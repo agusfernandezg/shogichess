@@ -123,7 +123,6 @@ class GameController extends AbstractController
         return $resultMatrix;
     }
 
-
     /**
      * @param Matrix $matrix
      * @return array
@@ -137,10 +136,8 @@ class GameController extends AbstractController
                 $matrixArray[$i][$j] = 0;
             }
         }
-
         return $matrixArray;
     }
-
 
     //Doesn't matter if its  Black or White side
     public function kingOverOtherPieces($matrixArray, $y, $x, $arrayOwnPieces, $arrayEnemyPieces)
@@ -155,7 +152,6 @@ class GameController extends AbstractController
             [$y + 1, $x - 1],
             [$y, $x - 1],
         ];
-
         return $this->getCleanAndAtackCoorinates($matrixArray, $pieceMovementCoordinates, $arrayOwnPieces, $arrayEnemyPieces);
     }
 
@@ -182,7 +178,6 @@ class GameController extends AbstractController
                 $arrayPieceMoves = array_merge($matrixDiagonalP, $matrixDiagonalS, $pieceMovementCoordinates);
                 break;
         }
-
         return $this->getCleanAndAtackCoorinates($matrixArray, $arrayPieceMoves, $arrayOwnPieces, $arrayEnemyPieces);
     }
 
@@ -222,7 +217,6 @@ class GameController extends AbstractController
         }
         return $result;
     }
-
 
     // Does matter side non promotional
     public function goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces)
@@ -273,7 +267,6 @@ class GameController extends AbstractController
                     ];
                     break;
             }
-
             $result = $this->getCleanAndAtackCoorinates($matrixArray, $pieceMovementCoordinates, $arrayOwnPieces, $arrayEnemyPieces);
         }
         return $result;
