@@ -267,7 +267,9 @@
                         let row_to = document.getElementById('row_to').value;
                         let col_to = document.getElementById('col_to').value;
 
-                        console.log(checkIfPromotable(id_piece, row_to, col_to, 'black'));
+                        let color = celda.classList.contains('white') ? 'white' : 'black';
+
+                        checkIfPromotable(id_piece, row_to, col_to, color);
 
                         make_move.disabled = true;
                         makeMove(id_piece, row_to, col_to);
@@ -287,20 +289,23 @@
             }
 
 
-            function checkIfPromotable(piece, row, col, color) {
+            function checkIfPromotable(id_piece, row, col, color) {
                 let promotionAreaArray = promotionArea(color);
-
-                console.log([parseInt(row), parseInt(col)]);
-                console.log(promotionAreaArray.indexOf([parseInt(row), parseInt(col)]));
-
-                if (promotionAreaArray.includes([parseInt(row), parseInt(col)])) {
-                    return "Si"
-                } else {
-                    return "No"
+                if (checkIfExistCoordinate(promotionAreaArray, parseInt(row), parseInt(col))) {
+                    askIfPromotePiece(id_piece);
                 }
-
             }
 
+
+            function checkIfExistCoordinate(promotionAreaArray, row, col) {
+                for (var i = 0, len = promotionAreaArray.length; i < len; i++) {
+                    if (promotionAreaArray[i][0] == row && promotionAreaArray[i][1] == col) {
+                        return true;
+                        break;
+                    }
+                }
+                return false;
+            }
 
             function promotionArea(color) {
                 var arrayPromotionArea = null;
@@ -327,7 +332,7 @@
             }
 
 
-            function promotePiece() {
+            function askIfPromotePiece(id_piece) {
                 swal({
                     title: "You can promote the piece",
                     text: "¿Do you want to do it?",
@@ -336,13 +341,24 @@
                     dangerMode: true,
                 })
                     .then((willPromote) => {
-
                         if (willPromote) {
-
-                        } else {
-
+                            promotePiece(id_piece);
                         }
                     });
+            }
+
+            function promotePiece(id_piece) {
+                var httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = function (data) {
+                    if (httpRequest.readyState === 4) {
+                        const resultObject = JSON.parse(httpRequest.response);
+                        console.log(resultObject);
+                    }
+                };
+
+                httpRequest.open('POST', '{{ path('promote_piece') }}')
+                httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+                httpRequest.send('id_piece=' + id_piece)
             }
 
 

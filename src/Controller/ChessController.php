@@ -12,7 +12,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ChessController extends AbstractController
 {
-    
+
     /**
      * @Route("/makeMove", name="make_move")
      */
@@ -55,6 +55,25 @@ class ChessController extends AbstractController
         $this->generateBlackPiecesPositionBitBoard();
 
         return new JsonResponse(['res' => 'ok']);
+    }
+
+
+    /**
+     * PromotePiece
+     * @Route("/promotePiece", name="promote_piece")
+     */
+    public function promotePiece()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $request = $this->get('request_stack')->getCurrentRequest();
+        $id_piece = $request->get('id_piece');
+        $piece = $entityManager->getRepository('App\Entity\Piece')->find($id_piece);
+
+        $piece->setPromoted(true);
+        $entityManager->persist($piece);
+        $entityManager->flush();
+
+        return new JsonResponse($piece->getName());
     }
 
 
