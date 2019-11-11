@@ -28,16 +28,42 @@
             color: darkred;
         }
 
+        .cell {
+            text-align: center;
+            cursor: pointer;
+            min-width: 20px;
+            min-height: 20px;
+            border: 1px solid gainsboro;
+            margin: auto;
+        }
+
+        .cell:hover{
+            color: orange;
+        }
+
     </style>
 
     <div class="example-wrapper">
-        <h1>Game Shogi ✅</h1>
+        <!--<h1>Game Shogi ✅</h1>-->
 
         <div class="row">
             <div class="col-6">
                 <div class="row">
                     <div class="col-12">
-                        {{ board | raw }}
+                        <div id="main_board">
+                            {{ board | raw }}
+                        </div>
+
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <button class="form-control succes" id="reset_board">
+                                <span class="spinner-border spinner-border-sm is-fetching" role="status"
+                                      aria-hidden="true"></span>
+                            Reset Board
+                        </button>
                     </div>
                 </div>
                 <hr>
@@ -69,48 +95,46 @@
                 </div>
             </div>
 
-            <div class="col-6">
-                <div class="row">
-                    <div class="col-6">
-                        <label>Possible piece Moves</label>
-                        <div id="piece_moves">
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <label>Own Pieces</label>
-                        <div id="own_pieces_board">
-                        </div>
-                    </div>
-                </div>
-                <hr>
-
-                <div class="row">
-                    <div class="col-6">
-                        <label>Enemy Pieces</label>
-                        <div id="enemy_pieces_div">
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <label>Result</label>
-                        <div id="result">
-                        </div>
-                    </div>
-                </div>
-                <hr>
-                <div class="row">
-                    <div class="col-6">
-                        <label>Not Res</label>
-                        <div id="not_res_pieces_board">
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        {#                        <label>And Result</label>#}
-                        {#                        <div id="result">#}
-                        {#                        </div>#}
-                    </div>
-                </div>
-
-            </div>
+{#            <div class="col-6">#}
+{#                <div class="row">#}
+{#                    <div class="col-6">#}
+{#                        <label>Possible piece Moves</label>#}
+{#                        <div id="piece_moves">#}
+{#                        </div>#}
+{#                    </div>#}
+{#                    <div class="col-6">#}
+{#                        <label>Own Pieces</label>#}
+{#                        <div id="own_pieces_board">#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </div>#}
+{#                <hr>#}
+{#                <div class="row">#}
+{#                    <div class="col-6">#}
+{#                        <label>Enemy Pieces</label>#}
+{#                        <div id="enemy_pieces_div">#}
+{#                        </div>#}
+{#                    </div>#}
+{#                    <div class="col-6">#}
+{#                        <label>Result</label>#}
+{#                        <div id="result">#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </div>#}
+{#                <hr>#}
+{#                <div class="row">#}
+{#                    <div class="col-6">#}
+{#                        <label>Not Res</label>#}
+{#                        <div id="not_res_pieces_board">#}
+{#                        </div>#}
+{#                    </div>#}
+{#                    <div class="col-6">#}
+{#                        #}{#                        <label>And Result</label>#}
+{#                        #}{#                        <div id="result">#}
+{#                        #}{#                        </div>#}
+{#                    </div>#}
+{#                </div>#}
+{#            </div>#}
 
         </div>
     </div>
@@ -123,18 +147,65 @@
             document.getElementsByClassName('is-fetching')[0].style.display = 'none';
 
             const make_move = document.getElementById('make_move');
+            const reset_board = document.getElementById('reset_board');
 
             make_move.addEventListener('click', function () {
                 let id_piece = document.getElementById('piece_id').value;
                 let row_to = document.getElementById('row_to').value;
                 let col_to = document.getElementById('col_to').value;
                 make_move.disabled = true;
-
                 makeMove(id_piece, row_to, col_to);
-
                 make_move.disabled = false;
             });
 
+            reset_board.addEventListener('click', function () {
+                reset_board.disabled = true;
+                resetBoard();
+                reset_board.disabled = false;
+                getMainBoard();
+            });
+
+
+            // make_move.addEventListener('click', function () {
+            //     let id_piece = document.getElementById('piece_id').value;
+            //     let row_to = document.getElementById('row_to').value;
+            //     let col_to = document.getElementById('col_to').value;
+            //     make_move.disabled = true;
+            //     makeMove(id_piece, row_to, col_to);
+            //     make_move.disabled = false;
+            // });
+
+
+            function getMainBoard() {
+                document.getElementsByClassName('is-fetching')[0].style.display = 'block';
+                var httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = function (data) {
+                    if (httpRequest.readyState === 4) {
+                        document.getElementsByClassName('is-fetching')[0].style.display = 'none';
+                        const resultObject = JSON.parse(httpRequest.response);
+                        const main_board = document.getElementById('main_board');
+                        main_board.innerHTML = resultObject.board;
+                        clickCell();
+                    }
+                };
+                httpRequest.open('POST', '{{ path('get_main_board') }}')
+                httpRequest.send();
+            }
+
+
+            function resetBoard() {
+                document.getElementsByClassName('is-fetching')[0].style.display = 'block';
+                var httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = function (data) {
+                    if (httpRequest.readyState === 4) {
+                        document.getElementsByClassName('is-fetching')[0].style.display = 'none';
+                        const resultObject = JSON.parse(httpRequest.response);
+                        console.log(resultObject);
+                    }
+                };
+                httpRequest.open('POST', '{{ path('clear_bds') }}')
+                httpRequest.send();
+            }
 
             function makeMove(id_piece, row_to, col_to) {
                 document.getElementsByClassName('is-fetching')[0].style.display = 'block';
@@ -142,12 +213,10 @@
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
                         document.getElementsByClassName('is-fetching')[0].style.display = 'none';
-                        const resultObject = JSON.parse(httpRequest.response);
-
-                        console.log(resultObject);
+                        //const resultObject = JSON.parse(httpRequest.response);
+                        getMainBoard();
                     }
                 };
-
                 httpRequest.open('POST', '{{ path('make_move') }}')
                 httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
                 httpRequest.send('id_piece=' + id_piece + '&row_to=' + row_to + '&col_to=' + col_to)
@@ -163,11 +232,16 @@
                         clearBoard("move_to_table");
 
                         const resultObject = JSON.parse(httpRequest.response);
-                        const own_pieces_div = document.getElementById('own_pieces_board');
-                        const enemy_pieces_div = document.getElementById('enemy_pieces_div');
-                        const piece_moves_div = document.getElementById('piece_moves');
-                        const result_div = document.getElementById('result');
-                        const not_res_pieces_board = document.getElementById('not_res_pieces_board');
+                        // const own_pieces_div = document.getElementById('own_pieces_board');
+                        // const enemy_pieces_div = document.getElementById('enemy_pieces_div');
+                        // const piece_moves_div = document.getElementById('piece_moves');
+                        // const result_div = document.getElementById('result');
+                        // const not_res_pieces_board = document.getElementById('not_res_pieces_board');
+                        // own_pieces_div.innerHTML = resultObject.ownPieces;
+                        // piece_moves_div.innerHTML = resultObject.possibleMoves;
+                        // result_div.innerHTML = resultObject.res;
+                        // enemy_pieces_div.innerHTML = resultObject.enemyPieces;
+                        // not_res_pieces_board.innerHTML = resultObject.notRes;
 
                         const possibleMovesClear = resultObject.possibleMovesArray.clear;
                         const possibleMovesEat = resultObject.possibleMovesArray.eat;
@@ -185,11 +259,7 @@
                             document.getElementById(id).classList.add("eatable");
                         }
 
-                        own_pieces_div.innerHTML = resultObject.ownPieces;
-                        piece_moves_div.innerHTML = resultObject.possibleMoves;
-                        result_div.innerHTML = resultObject.res;
-                        enemy_pieces_div.innerHTML = resultObject.enemyPieces;
-                        not_res_pieces_board.innerHTML = resultObject.notRes;
+
                     }
                 };
 
@@ -240,13 +310,18 @@
                     if (celda.classList.contains('possible')) {
                         document.getElementById('row_to').value = row;
                         document.getElementById('col_to').value = col;
+                        let id_piece = document.getElementById('piece_id').value;
+                        let row_to = document.getElementById('row_to').value;
+                        let col_to = document.getElementById('col_to').value;
+                        make_move.disabled = true;
+                        makeMove(id_piece, row_to, col_to);
+                        make_move.disabled = false;
                     } else {
                         alert("No es una posición válida para mover");
                     }
 
                 }
             }
-
 
         })();
     </script>

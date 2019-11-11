@@ -33,6 +33,18 @@ class GameController extends AbstractController
     }
 
 
+    /**
+     * @Route("/getMainBoard", name="get_main_board")
+     */
+    public function getMainBoard()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $matrixHtmlAllPiecesCurrentPosition = $this->drawSelectMoveBoard(9, 9);
+
+        return new JsonResponse([
+            'board' => $matrixHtmlAllPiecesCurrentPosition,
+        ]);
+    }
 
 
     /**
@@ -74,44 +86,42 @@ class GameController extends AbstractController
         }
 
 
-        //Matrix to show possible piece moves
-        $matrixPossible = $this->fromBitboardToMatrix(str_split($possibleMovesByPiece->getBitboard()), 9, 9);
-        $matrixHtmlPossibleMoves = $this->drawBoard($matrixPossible, 9, 9);
-
-        //Matrix to show Own Pieces
-        $matrixOwnPieces = $this->fromBitboardToMatrix(str_split($ownPiecesBitBoard->getBitboard()), 9, 9);
-        $matrixHtmlOwnPieces = $this->drawBoard($matrixOwnPieces, 9, 9);
-
-        //Matrix to show Own Pieces
-        $matrixEnemyPieces = $this->fromBitboardToMatrix(str_split($enemyPiecesBitboard->getBitboard()), 9, 9);
-        $matrixHtmlEnemyPieces = $this->drawBoard($matrixEnemyPieces, 9, 9);
-
-
-        //Matrix
-        $arrayBitboard = $this->boardAndBoard($ownPiecesBitBoard, $possibleMovesByPiece);
-        $matrixRes = $this->fromBitboardToMatrix($arrayBitboard, 9, 9);
-        $matrixHtmlRes = $this->drawBoard($matrixRes, 9, 9);
-
-        //Board1 and Not Board2
-        $arrayBitboardNot = $this->boardAndNotBitBoard($possibleMovesByPiece, $ownPiecesBitBoard);
-        $matrixNotRes = $this->fromBitboardToMatrix($arrayBitboardNot, 9, 9);
-        $matrixHtmlNotRes = $this->drawBoard($matrixNotRes, 9, 9);
+//        //Matrix to show possible piece moves
+//        $matrixPossible = $this->fromBitboardToMatrix(str_split($possibleMovesByPiece->getBitboard()), 9, 9);
+//        $matrixHtmlPossibleMoves = $this->drawBoard($matrixPossible, 9, 9);
+//
+//        //Matrix to show Own Pieces
+//        $matrixOwnPieces = $this->fromBitboardToMatrix(str_split($ownPiecesBitBoard->getBitboard()), 9, 9);
+//        $matrixHtmlOwnPieces = $this->drawBoard($matrixOwnPieces, 9, 9);
+//
+//        //Matrix to show Own Pieces
+//        $matrixEnemyPieces = $this->fromBitboardToMatrix(str_split($enemyPiecesBitboard->getBitboard()), 9, 9);
+//        $matrixHtmlEnemyPieces = $this->drawBoard($matrixEnemyPieces, 9, 9);
+//
+//
+//        //Matrix
+//        $arrayBitboard = $this->boardAndBoard($ownPiecesBitBoard, $possibleMovesByPiece);
+//        $matrixRes = $this->fromBitboardToMatrix($arrayBitboard, 9, 9);
+//        $matrixHtmlRes = $this->drawBoard($matrixRes, 9, 9);
+//
+//        //Board1 and Not Board2
+//        $arrayBitboardNot = $this->boardAndNotBitBoard($possibleMovesByPiece, $ownPiecesBitBoard);
+//        $matrixNotRes = $this->fromBitboardToMatrix($arrayBitboardNot, 9, 9);
+//        $matrixHtmlNotRes = $this->drawBoard($matrixNotRes, 9, 9);
 
 
         $own = $this->fromBitboardToCoordinatesArray(str_split($ownPiecesBitBoard->getBitboard()), 9, 9);
         $enemy = $this->fromBitboardToCoordinatesArray(str_split($enemyPiecesBitboard->getBitboard()), 9, 9);
 
-
         $baseMatrix = $this->matrixCreateWithoutModel(9, 9);
         $resultado = $this->getPieceVectorCoordinatesArrayToOwnPiece($baseMatrix, $bitBoardCurrentPiecePosition->getRow(), $bitBoardCurrentPiecePosition->getCol(), $own, $enemy, $piece);
 
-
         return new JsonResponse([
-            'ownPieces' => $matrixHtmlOwnPieces,
-            'possibleMoves' => $matrixHtmlPossibleMoves,
-            'enemyPieces' => $matrixHtmlEnemyPieces,
-            'res' => $matrixHtmlRes,
-            'notRes' => $matrixHtmlNotRes,
+//            'ownPieces' => $matrixHtmlOwnPieces,
+//            'possibleMoves' => $matrixHtmlPossibleMoves,
+//            'enemyPieces' => $matrixHtmlEnemyPieces,
+//            'res' => $matrixHtmlRes,
+//            'notRes' => $matrixHtmlNotRes,
             'possibleMovesArray' => $resultado
         ]);
     }
