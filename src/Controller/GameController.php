@@ -184,8 +184,6 @@ class GameController extends AbstractController
     //Doesn't matter if its  Black or White side
     public function kingOverOtherPieces($matrixArray, $y, $x, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinatesClean = [];
-        $arrayCoordinatesCanEat = [];
 
         $pieceMovementCoordinates = [
             [$y - 1, $x - 1],
@@ -198,29 +196,14 @@ class GameController extends AbstractController
             [$y, $x - 1],
         ];
 
-        foreach ($pieceMovementCoordinates as $coordinate) {
-            if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
-                if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces)) {
-                    array_push($arrayCoordinatesCanEat, $coordinate);
-                } else {
-                    array_push($arrayCoordinatesClean, $coordinate);
-                }
-            }
-        }
-
-        return [
-            'clear' => $arrayCoordinatesClean,
-            'eat' => $arrayCoordinatesCanEat
-        ];
+        return $this->getCleanAndAtackCoorinates($matrixArray, $pieceMovementCoordinates, $arrayOwnPieces, $arrayEnemyPieces);
     }
 
     //Doesn't matter if its  Black or White side
     public function bishopOverOtherPieces($matrixArray, $y, $x, $promoted, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinatesClean = [];
-        $arrayCoordinatesCanEat = [];
-        $arrayPieceMoves = [];
 
+        $arrayPieceMoves = [];
         switch ($promoted) {
             case false:
                 $matrixDiagonalP = $this->mainDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
@@ -242,29 +225,13 @@ class GameController extends AbstractController
                 break;
         }
 
-
-        foreach ($arrayPieceMoves as $coordinate) {
-            if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
-                if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces)) {
-                    array_push($arrayCoordinatesCanEat, $coordinate);
-                } else {
-                    array_push($arrayCoordinatesClean, $coordinate);
-                }
-            }
-        }
-
-        return [
-            'clear' => $arrayCoordinatesClean,
-            'eat' => $arrayCoordinatesCanEat
-        ];
+        return $this->getCleanAndAtackCoorinates($matrixArray, $arrayPieceMoves, $arrayOwnPieces, $arrayEnemyPieces);
     }
 
 
     // Does matter side
     public function lanceOverOtherPieces($matrixArray, $y, $x, $color, $promoted, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinatesClean = [];
-        $arrayCoordinatesCanEat = [];
 
         if ($promoted == true) {
             $result = $this->goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces);
@@ -272,19 +239,7 @@ class GameController extends AbstractController
 
             $pieceMovementCoordinates = $this->colForward($y, $x, 9, $color, $arrayOwnPieces, $arrayEnemyPieces);
 
-            foreach ($pieceMovementCoordinates as $coordinate) {
-                if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
-                    if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces)) {
-                        array_push($arrayCoordinatesCanEat, $coordinate);
-                    } else {
-                        array_push($arrayCoordinatesClean, $coordinate);
-                    }
-                }
-            }
-            $result = [
-                'clear' => $arrayCoordinatesClean,
-                'eat' => $arrayCoordinatesCanEat
-            ];
+            return $this->getCleanAndAtackCoorinates($matrixArray, $pieceMovementCoordinates, $arrayOwnPieces, $arrayEnemyPieces);
         }
         return $result;
     }
@@ -292,9 +247,8 @@ class GameController extends AbstractController
     // Does matter side
     public function pawnOverOtherPieces($matrixArray, $y, $x, $color, $promoted, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinatesClean = [];
-        $arrayCoordinatesCanEat = [];
 
+        $result = null;
         if ($promoted == true) {
             $result = $this->goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces);
         } else {
@@ -310,19 +264,7 @@ class GameController extends AbstractController
                     ];
                     break;
             }
-            foreach ($pieceMovementCoordinates as $coordinate) {
-                if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
-                    if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces)) {
-                        array_push($arrayCoordinatesCanEat, $coordinate);
-                    } else {
-                        array_push($arrayCoordinatesClean, $coordinate);
-                    }
-                }
-            }
-            $result = [
-                'clear' => $arrayCoordinatesClean,
-                'eat' => $arrayCoordinatesCanEat
-            ];
+            $result = $this->getCleanAndAtackCoorinates($matrixArray, $pieceMovementCoordinates, $arrayOwnPieces, $arrayEnemyPieces);
         }
         return $result;
     }
@@ -331,9 +273,6 @@ class GameController extends AbstractController
     // Does matter side non promotional
     public function goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinatesClean = [];
-        $arrayCoordinatesCanEat = [];
-
         switch ($color) {
             case('white'):
                 $pieceMovementCoordinates = [
@@ -357,19 +296,9 @@ class GameController extends AbstractController
                 break;
         }
 
-        foreach ($pieceMovementCoordinates as $coordinate) {
-            if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
-                if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces)) {
-                    array_push($arrayCoordinatesCanEat, $coordinate);
-                } else {
-                    array_push($arrayCoordinatesClean, $coordinate);
-                }
-            }
-        }
-        return [
-            'clear' => $arrayCoordinatesClean,
-            'eat' => $arrayCoordinatesCanEat
-        ];
+
+        return $this->getCleanAndAtackCoorinates($matrixArray, $pieceMovementCoordinates, $arrayOwnPieces, $arrayEnemyPieces);
+
     }
 
 
@@ -380,8 +309,6 @@ class GameController extends AbstractController
             $result = $this->goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces);
         } else {
 
-            $arrayCoordinatesClean = [];
-            $arrayCoordinatesCanEat = [];
             switch ($color) {
 
                 case('white'):
@@ -398,24 +325,9 @@ class GameController extends AbstractController
                     break;
             }
 
-            foreach ($pieceMovementCoordinates as $coordinate) {
-                if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
-                    if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces)) {
-                        array_push($arrayCoordinatesCanEat, $coordinate);
-                    } else {
-                        array_push($arrayCoordinatesClean, $coordinate);
-                    }
-                }
-            }
-            $result = [
-                'clear' => $arrayCoordinatesClean,
-                'eat' => $arrayCoordinatesCanEat
-            ];
-
+            $result = $this->getCleanAndAtackCoorinates($matrixArray, $pieceMovementCoordinates, $arrayOwnPieces, $arrayEnemyPieces);
         }
-
         return $result;
-
     }
 
 
@@ -426,10 +338,7 @@ class GameController extends AbstractController
             $result = $this->goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces);
         } else {
 
-            $arrayCoordinatesClean = [];
-            $arrayCoordinatesCanEat = [];
             switch ($color) {
-
                 case('white'):
                     $pieceMovementCoordinates = [
                         [$y - 1, $x - 1],
@@ -450,20 +359,7 @@ class GameController extends AbstractController
                     break;
             }
 
-            foreach ($pieceMovementCoordinates as $coordinate) {
-                if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
-                    if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces)) {
-                        array_push($arrayCoordinatesCanEat, $coordinate);
-                    } else {
-                        array_push($arrayCoordinatesClean, $coordinate);
-                    }
-                }
-            }
-
-            $result = [
-                'clear' => $arrayCoordinatesClean,
-                'eat' => $arrayCoordinatesCanEat
-            ];
+            return $this->getCleanAndAtackCoorinates($matrixArray, $pieceMovementCoordinates, $arrayOwnPieces, $arrayEnemyPieces);
         }
         return $result;
     }
@@ -472,8 +368,7 @@ class GameController extends AbstractController
     //Doesn't matter if its  Black or White side
     public function rookOverOtherPieces($matrixArray, $y, $x, $size, $color, $promoted = false, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinatesClean = [];
-        $arrayCoordinatesCanEat = [];
+
         $arrayPieceMoves = [];
 
         switch ($promoted) {
@@ -496,13 +391,26 @@ class GameController extends AbstractController
         }
 
 
+        return $this->getCleanAndAtackCoorinates($matrixArray, $arrayPieceMoves, $arrayOwnPieces, $arrayEnemyPieces);
+
+
+    }
+
+
+    public function getCleanAndAtackCoorinates($matrixArray, $arrayPieceMoves, $arrayOwnPieces, $arrayEnemyPieces)
+    {
+        $arrayCoordinatesCanEat = [];
+        $arrayCoordinatesClean = [];
+
         foreach ($arrayPieceMoves as $coordinate) {
             if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
+
                 if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces)) {
                     array_push($arrayCoordinatesCanEat, $coordinate);
                 } else {
                     array_push($arrayCoordinatesClean, $coordinate);
                 }
+
             }
         }
 
@@ -510,6 +418,7 @@ class GameController extends AbstractController
             'clear' => $arrayCoordinatesClean,
             'eat' => $arrayCoordinatesCanEat
         ];
+
     }
 
 
@@ -808,7 +717,8 @@ class GameController extends AbstractController
                     ]);
                 $piece_first_letter = isset($pieceCurrentPositionBitboard) ? substr($pieceCurrentPositionBitboard->getPiece()->getName(), 0, 1) : 0;
                 $piece_id = isset($pieceCurrentPositionBitboard) ? $pieceCurrentPositionBitboard->getPiece()->getId() : null;
-                $matrixHtml .= "<td data-row='" . $i . "' data-col='" . $j . "' data-piece='" . $piece_id . "' id='" . $i . $j . "'  class='center cell'>" . $piece_first_letter . "<td>";
+                $piece_color = isset($pieceCurrentPositionBitboard) ? $pieceCurrentPositionBitboard->getPiece()->getColor() : null;
+                $matrixHtml .= "<td data-row='" . $i . "' data-col='" . $j . "' data-piece='" . $piece_id . "' id='" . $i . $j . "'  class='center cell " . $piece_color . "'>" . $piece_first_letter . "<td>";
             }
             $matrixHtml .= "</tr>";
         }

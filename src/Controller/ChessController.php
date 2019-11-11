@@ -100,17 +100,19 @@ class ChessController extends AbstractController
     {
         $entityManager = $this->getDoctrine()->getManager();
 
-        //I change the current piece "current_position_bitboard
+        //I change the current piece "current_position_bitboard"
         $this->generateBitBoardInitialPositionPerPiece($piece, $row_to, $col_to);
-
-        //Generate a BitBoard with all the pieces in the initial position
-        $this->generateAllPiecesPositionBitBoardByCurrentPositionBitboards();
 
         //Generate a BitBoard with all the WHITE pieces in the initial position
         $this->generateWhitePiecesPositionBitBoardByCurrentPositionBitboards();
 
         //Generate a BitBoard with all the BLACK pieces in the initial position
         $this->generateBlackPiecesPositionBitBoardByCurrentPositionBitboards();
+
+
+        //Generate a BitBoard with all the pieces in the initial position
+        $this->generateAllPiecesPositionBitBoardByCurrentPositionBitboards();
+
 
         return new JsonResponse(['res' => 'ok']);
     }
