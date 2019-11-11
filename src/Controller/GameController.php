@@ -225,8 +225,8 @@ class GameController extends AbstractController
             case false:
                 $matrixDiagonalP = $this->mainDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
                 $matrixDiagonalS = $this->secondaryDiagonal($y, $x, 9, 9, $arrayOwnPieces, $arrayEnemyPieces);
-                break;
                 $arrayPieceMoves = array_merge($matrixDiagonalP, $matrixDiagonalS);
+                break;
             case true:
                 $matrixDiagonalP = $this->mainDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
                 $matrixDiagonalS = $this->secondaryDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
@@ -464,9 +464,7 @@ class GameController extends AbstractController
                 'clear' => $arrayCoordinatesClean,
                 'eat' => $arrayCoordinatesCanEat
             ];
-
         }
-
         return $result;
     }
 
@@ -480,21 +478,19 @@ class GameController extends AbstractController
 
         switch ($promoted) {
             case false:
-                $arrayRow = $this->row($y, $y, $size, $arrayOwnPieces, $arrayEnemyPieces);
+                $arrayRow = $this->row($y, $x, $size, $arrayOwnPieces, $arrayEnemyPieces);
                 $arrayCol = $this->col($y, $x, $color, $size, $arrayOwnPieces, $arrayEnemyPieces);
                 $arrayPieceMoves = array_merge($arrayRow, $arrayCol);
                 break;
             case true:
                 $arrayRow = $this->row($y, $y, $size, $arrayOwnPieces, $arrayEnemyPieces);
                 $arrayCol = $this->col($y, $x, $color, $size, $arrayOwnPieces, $arrayEnemyPieces);
-
                 $pieceMovementCoordinates = [
                     [$y - 1, $x - 1],
                     [$y - 1, $x + 1],
                     [$y + 1, $x + 1],
                     [$y + 1, $x - 1],
                 ];
-
                 $arrayPieceMoves = array_merge($arrayRow, $arrayCol, $pieceMovementCoordinates);
                 break;
         }
@@ -519,67 +515,16 @@ class GameController extends AbstractController
 
     public function row($y, $x, $size, $arrayOwnPieces, $arrayEnemyPieces)
     {
-//        $arrayCoordinates = [];
-//        for ($j = 0; $j < $size; $j++) {
-//            $res = $this->pushArrayCoordinates($row, $j, $arrayOwnPieces, $arrayEnemyPieces);
-//            if (!$res['sigo']) {
-//                break;
-//            } else {
-//                array_push($arrayCoordinates, $res['coord']);
-//            }
-//        }
-//        return $arrayCoordinates;
-
         $forward = $this->rowForward($y, $x, $size, $arrayOwnPieces, $arrayEnemyPieces);
         $back = $this->rowBack($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
 
         return array_merge($forward, $back);
     }
 
-    public function rowForward($y, $x, $size, $arrayOwnPieces, $arrayEnemyPieces)
-    {
-        $arrayCoordinates = [];
-        for ($j = $x + 1; $j < $size; $j++) {
-            $res = $this->pushArrayCoordinates($y, $j, $arrayOwnPieces, $arrayEnemyPieces);
-            if (!$res['sigo']) {
-                break;
-            } else {
-                array_push($arrayCoordinates, $res['coord']);
-            }
-        }
-        return $arrayCoordinates;
-    }
-
-    public function rowBack($y, $x, $arrayOwnPieces, $arrayEnemyPieces)
-    {
-        $arrayCoordinates = [];
-
-        for ($j = $x - 1; $j >= 0; $j--) {
-            $res = $this->pushArrayCoordinates($y, $j, $arrayOwnPieces, $arrayEnemyPieces);
-            if (!$res['sigo']) {
-                break;
-            } else {
-                array_push($arrayCoordinates, $res['coord']);
-            }
-        }
-        return $arrayCoordinates;
-    }
-
 
     //Doesn't matter if its  Black or White side
     public function col($y, $x, $color, $size, $arrayOwnPieces, $arrayEnemyPieces)
     {
-//        $arrayCoordinates = [];
-//        for ($i = 0; $i < $size; $i++) {
-//            $res = $this->pushArrayCoordinates($i, $col, $arrayOwnPieces, $arrayEnemyPieces);
-//            if (!$res['sigo']) {
-//                break;
-//            } else {
-//                array_push($arrayCoordinates, $res['coord']);
-//            }
-//        }
-
-
         $forward = $this->colForward($y, $x, $size, $color, $arrayOwnPieces, $arrayEnemyPieces);
         $down = $this->colDown($y, $x, $size, $color, $arrayOwnPieces, $arrayEnemyPieces);
 
@@ -592,8 +537,11 @@ class GameController extends AbstractController
     //Doesn't matter if its  Black or White side
     public function mainDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinates = [];
-        for ($i = $y, $j = $x; $i >= 0; $i--, $j++) {
+        $arrayCoordinates = []; //   (/>)
+        $x2 = $x;
+        $y2 = $y;
+
+        for ($i = $y - 1, $j = $x + 1; $i >= 0; $i--, $j++) {
             $res = $this->pushArrayCoordinates($i, $j, $arrayOwnPieces, $arrayEnemyPieces);
             if (!$res['sigo']) {
                 break;
@@ -601,9 +549,9 @@ class GameController extends AbstractController
                 array_push($arrayCoordinates, $res['coord']);
             }
         }
-
-        for ($j = $x, $i = $y; $j >= 0; $i++, $j--) {
-            $res = $this->pushArrayCoordinates($i, $j, $arrayOwnPieces, $arrayEnemyPieces);
+        //   (</)
+        for ($i2 = $y2 + 1, $j2 = $x2 - 1; $j2 >= 0; $i2++, $j2--) {
+            $res = $this->pushArrayCoordinates($i2, $j2, $arrayOwnPieces, $arrayEnemyPieces);
             if (!$res['sigo']) {
                 break;
             } else {
@@ -618,7 +566,9 @@ class GameController extends AbstractController
     public function secondaryDiagonal($y, $x, $row, $col, $arrayOwnPieces, $arrayEnemyPieces)
     {
         $arrayCoordinates = [];
-        for ($i = $y, $j = $x; $i >= 0 || $j >= 0; $i--, $j--) {
+        $x2 = $x;
+        $y2 = $y;
+        for ($i = $y - 1, $j = $x - 1; $i >= 0 || $j >= 0; $i--, $j--) {
             $res = $this->pushArrayCoordinates($i, $j, $arrayOwnPieces, $arrayEnemyPieces);
             if (!$res['sigo']) {
                 break;
@@ -627,8 +577,8 @@ class GameController extends AbstractController
             }
         }
 
-        for ($i = $y, $j = $x; $i <= $row || $j <= $col; $i++, $j++) {
-            $res = $this->pushArrayCoordinates($i, $j, $arrayOwnPieces, $arrayEnemyPieces);
+        for ($i2 = $y2 + 1, $j2 = $x2 + 1; $i2 <= $row || $j2 <= $col; $i2++, $j2++) {
+            $res = $this->pushArrayCoordinates($i2, $j2, $arrayOwnPieces, $arrayEnemyPieces);
             if (!$res['sigo']) {
                 break;
             } else {
@@ -698,7 +648,36 @@ class GameController extends AbstractController
                 break;
         }
 
+        return $arrayCoordinates;
+    }
 
+
+    public function rowForward($y, $x, $size, $arrayOwnPieces, $arrayEnemyPieces)
+    {
+        $arrayCoordinates = [];
+        for ($j = $x + 1; $j < $size; $j++) {
+            $res = $this->pushArrayCoordinates($y, $j, $arrayOwnPieces, $arrayEnemyPieces);
+            if (!$res['sigo']) {
+                break;
+            } else {
+                array_push($arrayCoordinates, $res['coord']);
+            }
+        }
+        return $arrayCoordinates;
+    }
+
+    public function rowBack($y, $x, $arrayOwnPieces, $arrayEnemyPieces)
+    {
+        $arrayCoordinates = [];
+
+        for ($j = $x - 1; $j >= 0; $j--) {
+            $res = $this->pushArrayCoordinates($y, $j, $arrayOwnPieces, $arrayEnemyPieces);
+            if (!$res['sigo']) {
+                break;
+            } else {
+                array_push($arrayCoordinates, $res['coord']);
+            }
+        }
         return $arrayCoordinates;
     }
 

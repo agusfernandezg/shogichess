@@ -71,6 +71,11 @@ class ChessController extends AbstractController
     public function clearBds()
     {
         $entityManager = $this->getDoctrine()->getManager();
+        $pieces = $entityManager->getRepository('App\Entity\Piece')->findAll();
+
+        foreach ($pieces as $piece) {
+            $this->generatePositionBitboardsByPiece($piece, 9, 9);
+        }
 
         //Generate a BitBoard with all the pieces in the initial position
         $this->generateAllPiecesPositionBitBoard();
