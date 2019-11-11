@@ -20,11 +20,10 @@ class GameController extends AbstractController
     }
 
     /**
-     * @Route("/chess", name="chess")
+     * @Route("/", name="chess")
      */
     public function chess()
     {
-        $entityManager = $this->getDoctrine()->getManager();
         $matrixHtmlAllPiecesCurrentPosition = $this->drawSelectMoveBoard(9, 9);
 
         return $this->render('game/index.html.twig', [
@@ -38,7 +37,6 @@ class GameController extends AbstractController
      */
     public function getMainBoard()
     {
-        $entityManager = $this->getDoctrine()->getManager();
         $matrixHtmlAllPiecesCurrentPosition = $this->drawSelectMoveBoard(9, 9);
 
         return new JsonResponse([
@@ -66,13 +64,6 @@ class GameController extends AbstractController
             'name' => 'current_position'
         ]);
 
-        //Posibles moves for the piece by coordinates
-        $possibleMovesByPiece = $entityManager->getRepository('App:Bitboard')->findOneBy([
-            'piece' => $piece,
-            'row' => $bitBoardCurrentPiecePosition->getRow(),
-            'col' => $bitBoardCurrentPiecePosition->getCol()
-        ]);
-
         //Get Own Pieces BitBoard
         switch ($piece->getColor()) {
             case 'white':
@@ -85,31 +76,6 @@ class GameController extends AbstractController
                 break;
         }
 
-
-//        //Matrix to show possible piece moves
-//        $matrixPossible = $this->fromBitboardToMatrix(str_split($possibleMovesByPiece->getBitboard()), 9, 9);
-//        $matrixHtmlPossibleMoves = $this->drawBoard($matrixPossible, 9, 9);
-//
-//        //Matrix to show Own Pieces
-//        $matrixOwnPieces = $this->fromBitboardToMatrix(str_split($ownPiecesBitBoard->getBitboard()), 9, 9);
-//        $matrixHtmlOwnPieces = $this->drawBoard($matrixOwnPieces, 9, 9);
-//
-//        //Matrix to show Own Pieces
-//        $matrixEnemyPieces = $this->fromBitboardToMatrix(str_split($enemyPiecesBitboard->getBitboard()), 9, 9);
-//        $matrixHtmlEnemyPieces = $this->drawBoard($matrixEnemyPieces, 9, 9);
-//
-//
-//        //Matrix
-//        $arrayBitboard = $this->boardAndBoard($ownPiecesBitBoard, $possibleMovesByPiece);
-//        $matrixRes = $this->fromBitboardToMatrix($arrayBitboard, 9, 9);
-//        $matrixHtmlRes = $this->drawBoard($matrixRes, 9, 9);
-//
-//        //Board1 and Not Board2
-//        $arrayBitboardNot = $this->boardAndNotBitBoard($possibleMovesByPiece, $ownPiecesBitBoard);
-//        $matrixNotRes = $this->fromBitboardToMatrix($arrayBitboardNot, 9, 9);
-//        $matrixHtmlNotRes = $this->drawBoard($matrixNotRes, 9, 9);
-
-
         $own = $this->fromBitboardToCoordinatesArray(str_split($ownPiecesBitBoard->getBitboard()), 9, 9);
         $enemy = $this->fromBitboardToCoordinatesArray(str_split($enemyPiecesBitboard->getBitboard()), 9, 9);
 
@@ -117,11 +83,6 @@ class GameController extends AbstractController
         $resultado = $this->getPieceVectorCoordinatesArrayToOwnPiece($baseMatrix, $bitBoardCurrentPiecePosition->getRow(), $bitBoardCurrentPiecePosition->getCol(), $own, $enemy, $piece);
 
         return new JsonResponse([
-//            'ownPieces' => $matrixHtmlOwnPieces,
-//            'possibleMoves' => $matrixHtmlPossibleMoves,
-//            'enemyPieces' => $matrixHtmlEnemyPieces,
-//            'res' => $matrixHtmlRes,
-//            'notRes' => $matrixHtmlNotRes,
             'possibleMovesArray' => $resultado
         ]);
     }
@@ -184,7 +145,6 @@ class GameController extends AbstractController
     //Doesn't matter if its  Black or White side
     public function kingOverOtherPieces($matrixArray, $y, $x, $arrayOwnPieces, $arrayEnemyPieces)
     {
-
         $pieceMovementCoordinates = [
             [$y - 1, $x - 1],
             [$y - 1, $x],
@@ -202,7 +162,6 @@ class GameController extends AbstractController
     //Doesn't matter if its  Black or White side
     public function bishopOverOtherPieces($matrixArray, $y, $x, $promoted, $arrayOwnPieces, $arrayEnemyPieces)
     {
-
         $arrayPieceMoves = [];
         switch ($promoted) {
             case false:
@@ -220,7 +179,6 @@ class GameController extends AbstractController
                     [$y + 1, $x],
                     [$y, $x - 1],
                 ];
-
                 $arrayPieceMoves = array_merge($matrixDiagonalP, $matrixDiagonalS, $pieceMovementCoordinates);
                 break;
         }
@@ -232,7 +190,6 @@ class GameController extends AbstractController
     // Does matter side
     public function lanceOverOtherPieces($matrixArray, $y, $x, $color, $promoted, $arrayOwnPieces, $arrayEnemyPieces)
     {
-
         if ($promoted == true) {
             $result = $this->goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces);
         } else {
@@ -247,7 +204,6 @@ class GameController extends AbstractController
     // Does matter side
     public function pawnOverOtherPieces($matrixArray, $y, $x, $color, $promoted, $arrayOwnPieces, $arrayEnemyPieces)
     {
-
         $result = null;
         if ($promoted == true) {
             $result = $this->goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces);
@@ -295,10 +251,7 @@ class GameController extends AbstractController
                 ];
                 break;
         }
-
-
         return $this->getCleanAndAtackCoorinates($matrixArray, $pieceMovementCoordinates, $arrayOwnPieces, $arrayEnemyPieces);
-
     }
 
 
@@ -308,9 +261,7 @@ class GameController extends AbstractController
         if ($promoted == true) {
             $result = $this->goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces);
         } else {
-
             switch ($color) {
-
                 case('white'):
                     $pieceMovementCoordinates = [
                         [$y + 2, $x + 1],
@@ -368,7 +319,6 @@ class GameController extends AbstractController
     //Doesn't matter if its  Black or White side
     public function rookOverOtherPieces($matrixArray, $y, $x, $size, $color, $promoted = false, $arrayOwnPieces, $arrayEnemyPieces)
     {
-
         $arrayPieceMoves = [];
 
         switch ($promoted) {
@@ -389,11 +339,7 @@ class GameController extends AbstractController
                 $arrayPieceMoves = array_merge($arrayRow, $arrayCol, $pieceMovementCoordinates);
                 break;
         }
-
-
         return $this->getCleanAndAtackCoorinates($matrixArray, $arrayPieceMoves, $arrayOwnPieces, $arrayEnemyPieces);
-
-
     }
 
 
@@ -404,23 +350,18 @@ class GameController extends AbstractController
 
         foreach ($arrayPieceMoves as $coordinate) {
             if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
-
-                if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces)) {
+                if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces) != false) {
                     array_push($arrayCoordinatesCanEat, $coordinate);
                 } else {
                     array_push($arrayCoordinatesClean, $coordinate);
                 }
-
             }
         }
-
         return [
             'clear' => $arrayCoordinatesClean,
             'eat' => $arrayCoordinatesCanEat
         ];
-
     }
-
 
     public function row($y, $x, $size, $arrayOwnPieces, $arrayEnemyPieces)
     {
@@ -446,23 +387,33 @@ class GameController extends AbstractController
     //Doesn't matter if its  Black or White side
     public function mainDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces)
     {
-        $arrayCoordinates = []; //   (/>)
+        $arrayCoordinates = [];
         $x2 = $x;
         $y2 = $y;
 
         for ($i = $y - 1, $j = $x + 1; $i >= 0; $i--, $j++) {
             $res = $this->pushArrayCoordinates($i, $j, $arrayOwnPieces, $arrayEnemyPieces);
             if (!$res['sigo']) {
-                break;
+                if ($res['enemy'] == true) {
+                    array_push($arrayCoordinates, $res['coord']);
+                    break;
+                } else {
+                    break;
+                }
             } else {
                 array_push($arrayCoordinates, $res['coord']);
             }
         }
-        //   (</)
+
         for ($i2 = $y2 + 1, $j2 = $x2 - 1; $j2 >= 0; $i2++, $j2--) {
             $res = $this->pushArrayCoordinates($i2, $j2, $arrayOwnPieces, $arrayEnemyPieces);
             if (!$res['sigo']) {
-                break;
+                if ($res['enemy'] == true) {
+                    array_push($arrayCoordinates, $res['coord']);
+                    break;
+                } else {
+                    break;
+                }
             } else {
                 array_push($arrayCoordinates, $res['coord']);
             }
@@ -480,16 +431,25 @@ class GameController extends AbstractController
         for ($i = $y - 1, $j = $x - 1; $i >= 0 || $j >= 0; $i--, $j--) {
             $res = $this->pushArrayCoordinates($i, $j, $arrayOwnPieces, $arrayEnemyPieces);
             if (!$res['sigo']) {
-                break;
+                if ($res['enemy'] == true) {
+                    array_push($arrayCoordinates, $res['coord']);
+                    break;
+                } else {
+                    break;
+                }
             } else {
                 array_push($arrayCoordinates, $res['coord']);
             }
         }
-
         for ($i2 = $y2 + 1, $j2 = $x2 + 1; $i2 <= $row || $j2 <= $col; $i2++, $j2++) {
             $res = $this->pushArrayCoordinates($i2, $j2, $arrayOwnPieces, $arrayEnemyPieces);
             if (!$res['sigo']) {
-                break;
+                if ($res['enemy'] == true) {
+                    array_push($arrayCoordinates, $res['coord']);
+                    break;
+                } else {
+                    break;
+                }
             } else {
                 array_push($arrayCoordinates, $res['coord']);
             }
@@ -508,7 +468,12 @@ class GameController extends AbstractController
                 for ($i = $y + 1; $i <= $size; $i++) {
                     $res = $this->pushArrayCoordinates($i, $x, $arrayOwnPieces, $arrayEnemyPieces);
                     if (!$res['sigo']) {
-                        break;
+                        if ($res['enemy'] == true) {
+                            array_push($arrayCoordinates, $res['coord']);
+                            break;
+                        } else {
+                            break;
+                        }
                     } else {
                         array_push($arrayCoordinates, $res['coord']);
                     }
@@ -518,7 +483,12 @@ class GameController extends AbstractController
                 for ($i = $y - 1; $i >= 0; $i--) {
                     $res = $this->pushArrayCoordinates($i, $x, $arrayOwnPieces, $arrayEnemyPieces);
                     if (!$res['sigo']) {
-                        break;
+                        if ($res['enemy'] == true) {
+                            array_push($arrayCoordinates, $res['coord']);
+                            break;
+                        } else {
+                            break;
+                        }
                     } else {
                         array_push($arrayCoordinates, $res['coord']);
                     }
@@ -539,7 +509,12 @@ class GameController extends AbstractController
                 for ($i = $y - 1; $i >= 0; $i--) {
                     $res = $this->pushArrayCoordinates($i, $x, $arrayOwnPieces, $arrayEnemyPieces);
                     if (!$res['sigo']) {
-                        break;
+                        if ($res['enemy'] == true) {
+                            array_push($arrayCoordinates, $res['coord']);
+                            break;
+                        } else {
+                            break;
+                        }
                     } else {
                         array_push($arrayCoordinates, $res['coord']);
                     }
@@ -549,7 +524,12 @@ class GameController extends AbstractController
                 for ($i = $y + 1; $i <= $size; $i++) {
                     $res = $this->pushArrayCoordinates($i, $x, $arrayOwnPieces, $arrayEnemyPieces);
                     if (!$res['sigo']) {
-                        break;
+                        if ($res['enemy'] == true) {
+                            array_push($arrayCoordinates, $res['coord']);
+                            break;
+                        } else {
+                            break;
+                        }
                     } else {
                         array_push($arrayCoordinates, $res['coord']);
                     }
@@ -567,7 +547,12 @@ class GameController extends AbstractController
         for ($j = $x + 1; $j < $size; $j++) {
             $res = $this->pushArrayCoordinates($y, $j, $arrayOwnPieces, $arrayEnemyPieces);
             if (!$res['sigo']) {
-                break;
+                if ($res['enemy'] == true) {
+                    array_push($arrayCoordinates, $res['coord']);
+                    break;
+                } else {
+                    break;
+                }
             } else {
                 array_push($arrayCoordinates, $res['coord']);
             }
@@ -582,7 +567,12 @@ class GameController extends AbstractController
         for ($j = $x - 1; $j >= 0; $j--) {
             $res = $this->pushArrayCoordinates($y, $j, $arrayOwnPieces, $arrayEnemyPieces);
             if (!$res['sigo']) {
-                break;
+                if ($res['enemy'] == true) {
+                    array_push($arrayCoordinates, $res['coord']);
+                    break;
+                } else {
+                    break;
+                }
             } else {
                 array_push($arrayCoordinates, $res['coord']);
             }
@@ -594,11 +584,14 @@ class GameController extends AbstractController
     public function pushArrayCoordinates($y, $x, $arrayOwnPieces, $arrayEnemyPieces)
     {
         $coord = null;
+        $enemy = false;
 
         if (array_search([$y, $x], $arrayOwnPieces) !== false) {
             $sigo = false;
+            $enemy = false;
         } elseif (array_search([$y, $x], $arrayEnemyPieces) !== false) {
             $coord = [$y, $x];
+            $enemy = true;
             $sigo = false;
         } else {
             $coord = [$y, $x];
@@ -607,9 +600,9 @@ class GameController extends AbstractController
 
         return [
             'sigo' => $sigo,
-            'coord' => $coord
+            'coord' => $coord,
+            'enemy' => $enemy
         ];
-
     }
 
 
@@ -626,7 +619,6 @@ class GameController extends AbstractController
 
     public function boardAndBoard($bitBoard1, $bitBoard2)
     {
-
         //Transformo a int para poder hacer operaciones Bitwise
         $upperBirboard1 = intval($bitBoard1->getBoard1(), 2);
         $middleBirboard1 = intval($bitBoard1->getBoard2(), 2);

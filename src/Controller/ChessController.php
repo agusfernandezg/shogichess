@@ -12,8 +12,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ChessController extends AbstractController
 {
-
-
+    
     /**
      * @Route("/makeMove", name="make_move")
      */
@@ -691,12 +690,10 @@ class ChessController extends AbstractController
     public function rook($matrixArray, $y, $x, $size, $promoted = false)
     {
         switch ($promoted) {
-
             case false:
                 $matrixRow = $this->row($matrixArray, $y, $size);
                 $matrix = $this->col($matrixRow, $x, $size);
                 break;
-
             case true:
                 $matrixRow = $this->row($matrixArray, $y, $size);
                 $matrix = $this->col($matrixRow, $x, $size);
@@ -709,7 +706,6 @@ class ChessController extends AbstractController
                 //isset($matrix[$y + 1][$x]) ? $matrix[$y + 1][$x] = 1 : null;
                 isset($matrix[$y + 1][$x - 1]) ? $matrix[$y + 1][$x - 1] = 1 : null;
                 // isset($matrix[$y][$x - 1]) ? $matrix[$y][$x - 1] = 1 : null;
-
                 break;
         }
 
@@ -719,17 +715,14 @@ class ChessController extends AbstractController
 //Doesn't matter if its  Black or White side
     public function bishop($matrixArray, $y, $x, $promoted)
     {
-
         switch ($promoted) {
             case false:
                 $matrixDiagonalP = $this->mainDiagonal($matrixArray, $y, $x);
                 $matrix = $this->secondaryDiagonal($matrixDiagonalP, $y, $x, 9, 9);
                 break;
-
             case true:
                 $matrixDiagonalP = $this->mainDiagonal($matrixArray, $y, $x);
                 $matrix = $this->secondaryDiagonal($matrixDiagonalP, $y, $x, 9, 9);
-
                 //isset($matrix[$y - 1][$x - 1]) ? $matrix[$y - 1][$x - 1] = 1 : null;
                 isset($matrix[$y - 1][$x]) ? $matrix[$y - 1][$x] = 1 : null;
                 //isset($matrix[$y - 1][$x + 1]) ? $matrix[$y - 1][$x + 1] = 1 : null;

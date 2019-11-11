@@ -2,6 +2,11 @@
 
 {% block title %}Shogi{% endblock %}
 
+{% block javascripts %}
+    {{ parent() }}
+
+{% endblock %}
+
 {% block body %}
     <style>
         .example-wrapper {
@@ -25,7 +30,7 @@
         }
 
         .eatable {
-            color: darkred;
+            color: darkred !important;
         }
 
         .cell {
@@ -50,6 +55,10 @@
             font-weight: bold;
         }
 
+        .hide {
+            display: none;
+        }
+
     </style>
 
     <div class="example-wrapper">
@@ -67,16 +76,27 @@
                 </div>
                 <hr>
                 <div class="row">
-                    <div class="col-12">
-                        <button class="form-control succes" id="reset_board">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <button class="form-control succes" id="promote_piece">
                                 <span class="spinner-border spinner-border-sm is-fetching" role="status"
                                       aria-hidden="true"></span>
-                            Reset Board
-                        </button>
+                                Promote Piece
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <button class="form-control succes" id="reset_board">
+                                <span class="spinner-border spinner-border-sm is-fetching" role="status"
+                                      aria-hidden="true"></span>
+                                Reset Board
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <hr>
-                <div class="row">
+                <div class="row hide">
                     <div class="col-12">
                         <div class="form-group">
                             <label>Piece</label>
@@ -103,93 +123,30 @@
                     </div>
                 </div>
             </div>
-
-            {#            <div class="col-6">#}
-            {#                <div class="row">#}
-            {#                    <div class="col-6">#}
-            {#                        <label>Possible piece Moves</label>#}
-            {#                        <div id="piece_moves">#}
-            {#                        </div>#}
-            {#                    </div>#}
-            {#                    <div class="col-6">#}
-            {#                        <label>Own Pieces</label>#}
-            {#                        <div id="own_pieces_board">#}
-            {#                        </div>#}
-            {#                    </div>#}
-            {#                </div>#}
-            {#                <hr>#}
-            {#                <div class="row">#}
-            {#                    <div class="col-6">#}
-            {#                        <label>Enemy Pieces</label>#}
-            {#                        <div id="enemy_pieces_div">#}
-            {#                        </div>#}
-            {#                    </div>#}
-            {#                    <div class="col-6">#}
-            {#                        <label>Result</label>#}
-            {#                        <div id="result">#}
-            {#                        </div>#}
-            {#                    </div>#}
-            {#                </div>#}
-            {#                <hr>#}
-            {#                <div class="row">#}
-            {#                    <div class="col-6">#}
-            {#                        <label>Not Res</label>#}
-            {#                        <div id="not_res_pieces_board">#}
-            {#                        </div>#}
-            {#                    </div>#}
-            {#                    <div class="col-6">#}
-            {#                        #}{#                        <label>And Result</label>#}
-            {#                        #}{#                        <div id="result">#}
-            {#                        #}{#                        </div>#}
-            {#                    </div>#}
-            {#                </div>#}
-            {#            </div>#}
         </div>
     </div>
-
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <script>
 
         (function () {
 
+
             document.getElementById('alert_datos').style.display = 'none';
-            document.getElementsByClassName('is-fetching')[0].style.display = 'none';
+            isFetching(false);
 
             const make_move = document.getElementById('make_move');
             const reset_board = document.getElementById('reset_board');
 
-            make_move.addEventListener('click', function () {
-                let id_piece = document.getElementById('piece_id').value;
-                let row_to = document.getElementById('row_to').value;
-                let col_to = document.getElementById('col_to').value;
-                make_move.disabled = true;
-                makeMove(id_piece, row_to, col_to);
-                make_move.disabled = false;
-            });
-
             reset_board.addEventListener('click', function () {
-                reset_board.disabled = true;
                 resetBoard();
-                reset_board.disabled = false;
                 getMainBoard();
             });
 
 
-            // make_move.addEventListener('click', function () {
-            //     let id_piece = document.getElementById('piece_id').value;
-            //     let row_to = document.getElementById('row_to').value;
-            //     let col_to = document.getElementById('col_to').value;
-            //     make_move.disabled = true;
-            //     makeMove(id_piece, row_to, col_to);
-            //     make_move.disabled = false;
-            // });
-
-
             function getMainBoard() {
-                document.getElementsByClassName('is-fetching')[0].style.display = 'block';
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        document.getElementsByClassName('is-fetching')[0].style.display = 'none';
                         const resultObject = JSON.parse(httpRequest.response);
                         const main_board = document.getElementById('main_board');
                         main_board.innerHTML = resultObject.board;
@@ -202,13 +159,14 @@
 
 
             function resetBoard() {
-                document.getElementsByClassName('is-fetching')[0].style.display = 'block';
+                isFetching(true);
+                reset_board.disabled = true;
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        document.getElementsByClassName('is-fetching')[0].style.display = 'none';
-                        const resultObject = JSON.parse(httpRequest.response);
-                        console.log(resultObject);
+                        //const resultObject = JSON.parse(httpRequest.response);
+                        isFetching(false);
+                        reset_board.disabled = false;
                     }
                 };
                 httpRequest.open('POST', '{{ path('clear_bds') }}')
@@ -216,11 +174,11 @@
             }
 
             function makeMove(id_piece, row_to, col_to) {
-                document.getElementsByClassName('is-fetching')[0].style.display = 'block';
+
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        document.getElementsByClassName('is-fetching')[0].style.display = 'none';
+
                         //const resultObject = JSON.parse(httpRequest.response);
                         getMainBoard();
                     }
@@ -232,25 +190,13 @@
 
 
             function sendMove(id_piece) {
-                document.getElementsByClassName('is-fetching')[0].style.display = 'block';
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        document.getElementsByClassName('is-fetching')[0].style.display = 'none';
+
                         clearBoard("move_to_table");
 
                         const resultObject = JSON.parse(httpRequest.response);
-                        // const own_pieces_div = document.getElementById('own_pieces_board');
-                        // const enemy_pieces_div = document.getElementById('enemy_pieces_div');
-                        // const piece_moves_div = document.getElementById('piece_moves');
-                        // const result_div = document.getElementById('result');
-                        // const not_res_pieces_board = document.getElementById('not_res_pieces_board');
-                        // own_pieces_div.innerHTML = resultObject.ownPieces;
-                        // piece_moves_div.innerHTML = resultObject.possibleMoves;
-                        // result_div.innerHTML = resultObject.res;
-                        // enemy_pieces_div.innerHTML = resultObject.enemyPieces;
-                        // not_res_pieces_board.innerHTML = resultObject.notRes;
-
                         const possibleMovesClear = resultObject.possibleMovesArray.clear;
                         const possibleMovesEat = resultObject.possibleMovesArray.eat;
 
@@ -266,7 +212,6 @@
                             let id = "" + obj[0] + obj[1];
                             document.getElementById(id).classList.add("eatable");
                         }
-
 
                     }
                 };
@@ -321,17 +266,89 @@
                         let id_piece = document.getElementById('piece_id').value;
                         let row_to = document.getElementById('row_to').value;
                         let col_to = document.getElementById('col_to').value;
+
+                        console.log(checkIfPromotable(id_piece, row_to, col_to, 'black'));
+
                         make_move.disabled = true;
                         makeMove(id_piece, row_to, col_to);
                         make_move.disabled = false;
+
                     } else {
                         alert("No es una posición válida para mover");
                     }
-
                 }
             }
 
+            function isFetching(bool) {
+                var els = document.getElementsByClassName('is-fetching');
+                Array.prototype.forEach.call(els, function (el) {
+                    bool == true ? el.style.opacity = "1" : el.style.opacity = "0";
+                });
+            }
+
+
+            function checkIfPromotable(piece, row, col, color) {
+                let promotionAreaArray = promotionArea(color);
+
+                console.log([parseInt(row), parseInt(col)]);
+                console.log(promotionAreaArray.indexOf([parseInt(row), parseInt(col)]));
+
+                if (promotionAreaArray.includes([parseInt(row), parseInt(col)])) {
+                    return "Si"
+                } else {
+                    return "No"
+                }
+
+            }
+
+
+            function promotionArea(color) {
+                var arrayPromotionArea = null;
+                var allElements = [];
+
+                for (let i = 0; i < 9; i++) {
+                    for (let j = 0; j < 9; j++) {
+                        allElements.push([i, j])
+                    }
+                }
+                switch (color) {
+                    case 'white':
+                        arrayPromotionArea = allElements.slice(54, 81);
+                        break;
+                    case 'black':
+                        arrayPromotionArea = allElements.slice(0, 27);
+                        break;
+                    default:
+                        arrayPromotionArea = [];
+                        break;
+                }
+
+                return arrayPromotionArea;
+            }
+
+
+            function promotePiece() {
+                swal({
+                    title: "You can promote the piece",
+                    text: "¿Do you want to do it?",
+                    icon: "info",
+                    buttons: true,
+                    dangerMode: true,
+                })
+                    .then((willPromote) => {
+
+                        if (willPromote) {
+
+                        } else {
+
+                        }
+                    });
+            }
+
+
         })();
+
+
     </script>
 
 {% endblock %}
