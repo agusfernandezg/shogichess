@@ -23,13 +23,26 @@ class ChessController extends AbstractController
         $id_piece = $request->get('id_piece');
         $row_to = $request->get('row_to');
         $col_to = $request->get('col_to');
+        $eat = $request->get('eatable');
 
         //Get Piece
         $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
 
-        $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
+        if ($eat == "true") {
+            $victimBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy([
+                'name' => 'current_position',
+                'row' => $row_to,
+                'col' => $col_to,
+            ]);
+            $victimBitboard->setPieceDeleted(true);
+            $entityManager->persist($victimBitboard);
+            $entityManager->flush();
+            $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
+        } else {
+            $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
+        }
 
-        return new JsonResponse("ok");
+        return new JsonResponse();
     }
 
 
@@ -45,6 +58,7 @@ class ChessController extends AbstractController
         foreach ($pieces as $piece) {
             $this->generatePositionBitboardsByPiece($piece, 9, 9);
         }
+
         //Generate a BitBoard with all the pieces in the initial position
         $this->generateAllPiecesPositionBitBoard();
 
@@ -91,9 +105,22 @@ class ChessController extends AbstractController
         $entityManager = $this->getDoctrine()->getManager();
         $pieces = $entityManager->getRepository('App\Entity\Piece')->findAll();
 
+        $curretPositionBitboars = $entityManager->getRepository('App:Bitboard')->findBy([
+            'name' => 'current_position',
+        ]);
+
+        foreach ($curretPositionBitboars as $bitboard) {
+            $bitboard->setPieceDeleted(false);
+            $entityManager->persist($bitboard);
+        }
+        $entityManager->flush();
+
         foreach ($pieces as $piece) {
             $this->generatePositionBitboardsByPiece($piece, 9, 9);
+            $piece->setPromoted(false);
+            $entityManager->persist($piece);
         }
+        $entityManager->flush();
 
         //Generate a BitBoard with all the pieces in the initial position
         $this->generateAllPiecesPositionBitBoard();
@@ -118,7 +145,7 @@ class ChessController extends AbstractController
     {
         $entityManager = $this->getDoctrine()->getManager();
 
-        //I change the current piece "current_position_bitboard"
+        //I change the  piece "current_position_bitboard"
         $this->generateBitBoardInitialPositionPerPiece($piece, $row_to, $col_to);
 
         //Generate a BitBoard with all the WHITE pieces in the initial position
@@ -126,7 +153,6 @@ class ChessController extends AbstractController
 
         //Generate a BitBoard with all the BLACK pieces in the initial position
         $this->generateBlackPiecesPositionBitBoardByCurrentPositionBitboards();
-
 
         //Generate a BitBoard with all the pieces in the initial position
         $this->generateAllPiecesPositionBitBoardByCurrentPositionBitboards();
@@ -147,7 +173,11 @@ class ChessController extends AbstractController
         $entityManager = $this->getDoctrine()->getManager();
 
         $allPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_pieces']);
-        $currentPositionPiecesBitboards = $entityManager->getRepository('App:Bitboard')->findBy(['name' => 'current_position']);
+        $currentPositionPiecesBitboards = $entityManager->getRepository('App:Bitboard')->findBy(
+            [
+                'name' => 'current_position',
+                'pieceDeleted' => false
+            ]);
 
         $entityManager->remove($allPiecesBitboard);
         $entityManager->flush();
@@ -157,9 +187,11 @@ class ChessController extends AbstractController
         $bitBoardAllPieces->setName('all_pieces');
 
         foreach ($currentPositionPiecesBitboards as $currentPositionBitboard) {
-            $pieceRow = $currentPositionBitboard->getRow();
-            $pieceCol = $currentPositionBitboard->getCol();
-            $matrix[$pieceRow][$pieceCol] = 1;
+            if (!$currentPositionBitboard->getPieceDeleted()) {
+                $pieceRow = $currentPositionBitboard->getRow();
+                $pieceCol = $currentPositionBitboard->getCol();
+                $matrix[$pieceRow][$pieceCol] = 1;
+            }
         }
 
         $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
@@ -196,7 +228,7 @@ class ChessController extends AbstractController
         $currentPositionPiecesBitboards = $entityManager->getRepository('App:Bitboard')->findBy(
             [
                 'name' => 'current_position',
-                'color' => 'white'
+                'color' => 'white',
             ]
         );
 
@@ -208,9 +240,11 @@ class ChessController extends AbstractController
         $bitBoardAllPieces->setName('all_white_pieces');
 
         foreach ($currentPositionPiecesBitboards as $currentPositionBitboard) {
-            $pieceRow = $currentPositionBitboard->getRow();
-            $pieceCol = $currentPositionBitboard->getCol();
-            $matrix[$pieceRow][$pieceCol] = 1;
+            if (!$currentPositionBitboard->getPieceDeleted()) {
+                $pieceRow = $currentPositionBitboard->getRow();
+                $pieceCol = $currentPositionBitboard->getCol();
+                $matrix[$pieceRow][$pieceCol] = 1;
+            }
         }
 
         $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
@@ -248,7 +282,7 @@ class ChessController extends AbstractController
         $currentPositionPiecesBitboards = $entityManager->getRepository('App:Bitboard')->findBy(
             [
                 'name' => 'current_position',
-                'color' => 'black'
+                'color' => 'black',
             ]
         );
 
@@ -260,9 +294,11 @@ class ChessController extends AbstractController
         $bitBoardAllPieces->setName('all_black_pieces');
 
         foreach ($currentPositionPiecesBitboards as $currentPositionBitboard) {
-            $pieceRow = $currentPositionBitboard->getRow();
-            $pieceCol = $currentPositionBitboard->getCol();
-            $matrix[$pieceRow][$pieceCol] = 1;
+            if (!$currentPositionBitboard->getPieceDeleted()) {
+                $pieceRow = $currentPositionBitboard->getRow();
+                $pieceCol = $currentPositionBitboard->getCol();
+                $matrix[$pieceRow][$pieceCol] = 1;
+            }
         }
 
         $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
@@ -379,13 +415,13 @@ class ChessController extends AbstractController
 
         $checkIfAlreadyExiste = $entityManager->getRepository('App:Bitboard')->findOneBy([
             'piece' => $piece,
-            'name' => 'current_position'
+            'name' => 'current_position',
         ]);
 
-        $matrix[$row][$col] = 1;
 
         //Si yá existe, lo actualizo a la posición Inicial de la piza, sino creo uno nuevo.
-        if ($checkIfAlreadyExiste) {
+        if ($checkIfAlreadyExiste && !$checkIfAlreadyExiste->getPieceDeleted()) {
+            $matrix[$row][$col] = 1;
             $piece->addBitboard($checkIfAlreadyExiste);
             $checkIfAlreadyExiste->setRow($row);
             $checkIfAlreadyExiste->setCol($col);
@@ -405,10 +441,11 @@ class ChessController extends AbstractController
             $checkIfAlreadyExiste->setBoard2($stringArrayBitBoard2);
             $checkIfAlreadyExiste->setBoard3($stringArrayBitBoard3);
 
-
             $entityManager->persist($checkIfAlreadyExiste);
             $entityManager->persist($piece);
+
         } else {
+            $matrix[$row][$col] = 1;
             $piece->addBitboard($bitBoardPieceActualPosition);
             $bitBoardPieceActualPosition->setRow($row);
             $bitBoardPieceActualPosition->setCol($col);
@@ -429,7 +466,6 @@ class ChessController extends AbstractController
             $entityManager->persist($bitBoardPieceActualPosition);
             $entityManager->persist($piece);
         }
-
         $entityManager->flush();
 
     }
@@ -562,7 +598,8 @@ class ChessController extends AbstractController
                     [
                         'piece' => $piece,
                         'row' => $i,
-                        'col' => $j
+                        'col' => $j,
+                        'pieceDeleted' => false
                     ]);
 
                 if (!$checkIfAlreadyExiste) {

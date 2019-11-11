@@ -9,41 +9,38 @@
 
 {% block body %}
     <style>
-        .example-wrapper {
-            margin: 1em auto;
-            max-width: 800px;
-            width: 95%;
-            font: 18px/1.5 sans-serif;
-        }
 
-        .example-wrapper code {
-            background: #F5F5F5;
-            padding: 2px 6px;
-        }
 
         .red {
             color: #b0413e;
         }
 
         .possible {
-            color: blue;
+            background: #4f805d;
         }
 
         .eatable {
-            color: darkred !important;
+            background: #b0413e !important;
         }
 
-        .cell {
-            text-align: center;
+        /*.cell {*/
+        /*    text-align: center;*/
+        /*    cursor: pointer;*/
+        /*    min-width: 20px;*/
+        /*    min-height: 20px;*/
+        /*    border: 1px solid gainsboro;*/
+        /*    margin: auto;*/
+        /*}*/
+        table, th, td {
+            padding: 10px;
+            border: 1px solid black;
+            border-collapse: collapse;
             cursor: pointer;
-            min-width: 20px;
-            min-height: 20px;
-            border: 1px solid gainsboro;
-            margin: auto;
         }
 
         .cell:hover {
-            color: orange;
+            /*color: orange;*/
+            background: orange;
         }
 
         .white {
@@ -130,7 +127,6 @@
 
         (function () {
 
-
             document.getElementById('alert_datos').style.display = 'none';
             isFetching(false);
 
@@ -138,7 +134,7 @@
             const reset_board = document.getElementById('reset_board');
 
             reset_board.addEventListener('click', function () {
-                resetBoard();
+                resetBoardDbs();
                 getMainBoard();
             });
 
@@ -158,13 +154,12 @@
             }
 
 
-            function resetBoard() {
+            function resetBoardDbs() {
                 isFetching(true);
                 reset_board.disabled = true;
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        //const resultObject = JSON.parse(httpRequest.response);
                         isFetching(false);
                         reset_board.disabled = false;
                     }
@@ -173,19 +168,17 @@
                 httpRequest.send();
             }
 
-            function makeMove(id_piece, row_to, col_to) {
+            function makeMove(id_piece, row_to, col_to, eatable) {
 
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-
-                        //const resultObject = JSON.parse(httpRequest.response);
                         getMainBoard();
                     }
                 };
                 httpRequest.open('POST', '{{ path('make_move') }}')
                 httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
-                httpRequest.send('id_piece=' + id_piece + '&row_to=' + row_to + '&col_to=' + col_to)
+                httpRequest.send('id_piece=' + id_piece + '&row_to=' + row_to + '&col_to=' + col_to + '&eatable=' + eatable)
             }
 
 
@@ -244,40 +237,42 @@
                             let row = this.getAttribute("data-row");
                             let col = this.getAttribute("data-col");
                             let id_piece = this.getAttribute("data-piece");
-                            setRowCol(row, col, id_piece,);
+                            let eatable = this.classList.contains('eatable')
+
+                            setRowCol(row, col, id_piece, eatable);
                         })
                     }
                 }
             }
 
-            function setRowCol(row, col, id_piece) {
-                if (id_piece != "") {
+            function setRowCol(row, col, id_piece, eatable) {
+
+                if (id_piece != "" && !eatable) {
                     document.getElementById('piece_id').value = id_piece;
                     document.getElementById('alert_datos').style.display = 'none';
                     make_move.disabled = true;
                     sendMove(id_piece);
                     make_move.disabled = false;
+
                 } else {
                     let id_celda = row + col;
                     let celda = document.getElementById(id_celda);
-                    if (celda.classList.contains('possible')) {
+
+                    if (celda.classList.contains('possible') || celda.classList.contains('eatable')) {
                         document.getElementById('row_to').value = row;
                         document.getElementById('col_to').value = col;
                         let id_piece = document.getElementById('piece_id').value;
                         let row_to = document.getElementById('row_to').value;
                         let col_to = document.getElementById('col_to').value;
-
-                        let color = celda.classList.contains('white') ? 'white' : 'black';
-
-                        checkIfPromotable(id_piece, row_to, col_to, color);
-
+                        let pieza = document.querySelectorAll("[data-piece='" + id_piece + "']")[0];
+                        let promoted = pieza.classList.contains("promoted") ? '1' : '0';
+                        let color = pieza.classList.contains("white") ? 'white' : 'black';
+                        promoted == 0 ? checkIfPromotable(id_piece, row_to, col_to, color) : "";
                         make_move.disabled = true;
-                        makeMove(id_piece, row_to, col_to);
+                        makeMove(id_piece, row_to, col_to, eatable);
                         make_move.disabled = false;
-
-                    } else {
-                        alert("No es una posición válida para mover");
                     }
+
                 }
             }
 
@@ -343,6 +338,7 @@
                     .then((willPromote) => {
                         if (willPromote) {
                             promotePiece(id_piece);
+                            getMainBoard();
                         }
                     });
             }

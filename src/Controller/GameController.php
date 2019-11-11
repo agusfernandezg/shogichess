@@ -171,7 +171,7 @@ class GameController extends AbstractController
                 break;
             case true:
                 $matrixDiagonalP = $this->mainDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
-                $matrixDiagonalS = $this->secondaryDiagonal($y, $x, $arrayOwnPieces, $arrayEnemyPieces);
+                $matrixDiagonalS = $this->secondaryDiagonal($y, $x, 9, 9, $arrayOwnPieces, $arrayEnemyPieces);
 
                 $pieceMovementCoordinates = [
                     [$y - 1, $x],
@@ -193,9 +193,7 @@ class GameController extends AbstractController
         if ($promoted == true) {
             $result = $this->goldGeneralOverOtherPieces($matrixArray, $y, $x, $color, $arrayOwnPieces, $arrayEnemyPieces);
         } else {
-
             $pieceMovementCoordinates = $this->colForward($y, $x, 9, $color, $arrayOwnPieces, $arrayEnemyPieces);
-
             return $this->getCleanAndAtackCoorinates($matrixArray, $pieceMovementCoordinates, $arrayOwnPieces, $arrayEnemyPieces);
         }
         return $result;
@@ -328,7 +326,7 @@ class GameController extends AbstractController
                 $arrayPieceMoves = array_merge($arrayRow, $arrayCol);
                 break;
             case true:
-                $arrayRow = $this->row($y, $y, $size, $arrayOwnPieces, $arrayEnemyPieces);
+                $arrayRow = $this->row($y, $x, $size, $arrayOwnPieces, $arrayEnemyPieces);
                 $arrayCol = $this->col($y, $x, $color, $size, $arrayOwnPieces, $arrayEnemyPieces);
                 $pieceMovementCoordinates = [
                     [$y - 1, $x - 1],
@@ -675,7 +673,6 @@ class GameController extends AbstractController
         $middleBirboard1 = intval($bitBoard1->getBoard2(), 2);
         $bottomBirboard1 = intval($bitBoard1->getBoard3(), 2);
 
-
         //Hago la operación por cada segmento
         $upper = ($upperBirboard1 & $intUpperNotBirboard2);
         $middle = ($middleBirboard1 & $intMiddleNotBirboard2);
@@ -696,7 +693,6 @@ class GameController extends AbstractController
     {
         $matrixHtml = "";
         $entityManager = $this->getDoctrine()->getManager();
-        $matrixHtml .= "<style> .center{text-align: center; cursor: pointer; }</style>";
         $matrixHtml .= "<table id='move_to_table'>";
         for ($i = 0; $i < $row; $i++) {
             $matrixHtml .= "<tr>";
@@ -705,19 +701,23 @@ class GameController extends AbstractController
                     [
                         'name' => 'current_position',
                         'row' => $i,
-                        'col' => $j
+                        'col' => $j,
+                        'pieceDeleted' => false
                     ]);
                 $piece_first_letter = isset($pieceCurrentPositionBitboard) ? substr($pieceCurrentPositionBitboard->getPiece()->getName(), 0, 1) : 0;
                 $piece_id = isset($pieceCurrentPositionBitboard) ? $pieceCurrentPositionBitboard->getPiece()->getId() : null;
                 $piece_color = isset($pieceCurrentPositionBitboard) ? $pieceCurrentPositionBitboard->getPiece()->getColor() : null;
-                $matrixHtml .= "<td data-row='" . $i . "' data-col='" . $j . "' data-piece='" . $piece_id . "' id='" . $i . $j . "'  class='center cell " . $piece_color . "'>" . $piece_first_letter . "<td>";
+                $promoted = 'nopromoted';
+                if (isset($pieceCurrentPositionBitboard) && $pieceCurrentPositionBitboard->getPiece()->getPromoted()) {
+                    $promoted = 'promoted';
+                }
+                $matrixHtml .= "<td data-prom='" . $promoted . "' data-row='" . $i . "' data-col='" . $j . "' data-piece='" . $piece_id . "' id='" . $i . $j . "'  class='center cell " . $piece_color . " " . $promoted . "'>" . $piece_first_letter . "</td>";
             }
             $matrixHtml .= "</tr>";
         }
         $matrixHtml .= "</table>";
 
         return $matrixHtml;
-
     }
 
 

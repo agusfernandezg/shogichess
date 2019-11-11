@@ -62,8 +62,10 @@ class Bitboard
      */
     private $color;
 
-
-
+    /**
+     * @ORM\Column(type="boolean", nullable=true, options={"default":"0"})
+     */
+    private $pieceDeleted = false;
 
 
     public function __construct()
@@ -185,6 +187,17 @@ class Bitboard
         return $this;
     }
 
+    public function getPieceDeleted(): ?bool
+    {
+        return $this->pieceDeleted;
+    }
+
+    public function setPieceDeleted(?bool $pieceDeleted): self
+    {
+        $this->pieceDeleted = $pieceDeleted;
+
+        return $this;
+    }
 
 
 }
