@@ -135,7 +135,6 @@
 
             reset_board.addEventListener('click', function () {
                 resetBoardDbs();
-                getMainBoard();
             });
 
 
@@ -161,6 +160,7 @@
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
                         isFetching(false);
+                        getMainBoard();
                         reset_board.disabled = false;
                     }
                 };

@@ -7,6 +7,11 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\BitboardRepository")
+ * @ORM\Table(
+ *     indexes={@ORM\Index(
+ *     columns={ "row", "col","piece_id"}
+ *     )}
+ *     )
  */
 class Bitboard
 {
@@ -28,7 +33,7 @@ class Bitboard
     private $bitboard;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Piece", inversedBy="bitboards")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Piece", inversedBy="bitboards" , fetch="EAGER")
      */
     private $piece;
 

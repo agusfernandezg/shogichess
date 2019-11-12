@@ -594,6 +594,7 @@ class ChessController extends AbstractController
         for ($i = 0; $i < $row; $i++) {
             for ($j = 0; $j < $col; $j++) {
 
+                $checkIfAlreadyExiste = false;
                 $checkIfAlreadyExiste = $entityManager->getRepository('App:Bitboard')->findOneBy(
                     [
                         'piece' => $piece,
