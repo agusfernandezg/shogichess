@@ -24,10 +24,11 @@ class GameController extends AbstractController
      */
     public function chess()
     {
-        $matrixHtmlAllPiecesCurrentPosition = $this->drawSelectMoveBoard(9, 9);
+        $resultado = $this->drawSelectMoveBoard(9, 9);
 
         return $this->render('game/index.html.twig', [
-            'board' => $matrixHtmlAllPiecesCurrentPosition,
+            'eatenPieces' => $resultado['eatenPieces'],
+            'board' => $resultado['board'],
         ]);
     }
 
@@ -37,11 +38,37 @@ class GameController extends AbstractController
      */
     public function getMainBoard()
     {
-        $matrixHtmlAllPiecesCurrentPosition = $this->drawSelectMoveBoard(9, 9);
+        $resultado = $this->drawSelectMoveBoard(9, 9);
 
         return new JsonResponse([
-            'board' => $matrixHtmlAllPiecesCurrentPosition,
+            'eatenPieces' => $resultado['eatenPieces'],
+            'board' => $resultado['board'],
         ]);
+    }
+
+    function getEatenPieces()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $whitePiecesHtml = "";
+        $blackPiecesHtml = "";
+        $eatenPieces = $entityManager->getRepository('App\Entity\Bitboard')->findBy(['pieceDeleted' => true]);
+
+        foreach ($eatenPieces as $bitboard) {
+            $piece_id = $bitboard->getPiece()->getId();
+            switch ($bitboard->getColor()) {
+                case 'white':
+                    $whitePiecesHtml .= "<div id='" . $piece_id . "' class='eaten white-eaten-piece'>" . $piece_id . "</div>";
+                    break;
+                case 'black':
+                    $blackPiecesHtml .= "<div id='" . $piece_id . "' class='eaten black-eaten-piece'>" . $piece_id . "</div>";
+                    break;
+            }
+        }
+
+        return [
+            'white' => $whitePiecesHtml,
+            'black' => $blackPiecesHtml
+        ];
     }
 
 
@@ -710,7 +737,12 @@ class GameController extends AbstractController
         }
         $matrixHtml .= "</table>";
 
-        return $matrixHtml;
+        $eatenPieces = $this->getEatenPieces();
+
+        return [
+            'board' => $matrixHtml,
+            'eatenPieces' => $eatenPieces
+        ];
     }
 
 

@@ -24,6 +24,7 @@ class ChessController extends AbstractController
         $row_to = $request->get('row_to');
         $col_to = $request->get('col_to');
         $eat = $request->get('eatable');
+        $eatenPieces = [];
 
         //Get Piece
         $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
@@ -38,11 +39,13 @@ class ChessController extends AbstractController
             $entityManager->persist($victimBitboard);
             $entityManager->flush();
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
+            $eatenPieces = $this->getEatenPieces();
         } else {
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
+            $eatenPieces = $this->getEatenPieces();
         }
 
-        return new JsonResponse();
+        return new JsonResponse($eatenPieces);
     }
 
 
@@ -58,6 +61,7 @@ class ChessController extends AbstractController
         foreach ($pieces as $piece) {
             $this->generatePositionBitboardsByPiece($piece, 9, 9);
         }
+        $entityManager->flush();
 
         //Generate a BitBoard with all the pieces in the initial position
         $this->generateAllPiecesPositionBitBoard();
@@ -71,6 +75,31 @@ class ChessController extends AbstractController
         return new JsonResponse(['res' => 'ok']);
     }
 
+
+    function getEatenPieces()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $whitePiecesHtml = "";
+        $blackPiecesHtml = "";
+        $eatenPieces = $entityManager->getRepository('App\Entity\Bitboard')->findBy(['pieceDeleted' => true]);
+
+        foreach ($eatenPieces as $bitboard) {
+            $piece_id = $bitboard->getPiece()->getId();
+            switch ($bitboard->getColor()) {
+                case 'white':
+                    $whitePiecesHtml .= "<div id='" . $piece_id . "' class='eaten white-eaten-piece'>" . $piece_id . "</div>";
+                    break;
+                case 'black':
+                    $blackPiecesHtml .= "<div id='" . $piece_id . "' class='eaten black-eaten-piece'>" . $piece_id . "</div>";
+                    break;
+            }
+        }
+
+        return [
+            'white' => $whitePiecesHtml,
+            'black' => $blackPiecesHtml
+        ];
+    }
 
     /**
      * PromotePiece
@@ -88,6 +117,32 @@ class ChessController extends AbstractController
         $entityManager->flush();
 
         return new JsonResponse($piece->getName());
+    }
+
+
+    /**
+     * addPieceBack
+     * @Route("/addPieceBack", name="add_piece_back")
+     */
+    public function addPieceBack()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $request = $this->get('request_stack')->getCurrentRequest();
+        $id_piece = $request->get('id_piece');
+        $row_to = $request->get('row_to');
+        $col_to = $request->get('col_to');
+
+        $piece = $entityManager->getRepository('App\Entity\Piece')->find($id_piece);
+
+        $actualColor = $piece->getColor();
+        $actualColor == 'white' ? $piece->setColor('black') : $piece->setColor('white');
+
+        $entityManager->persist($piece);
+        $entityManager->flush();
+
+        $res = $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to, true);
+
+        return new JsonResponse($res);
     }
 
 
@@ -116,11 +171,13 @@ class ChessController extends AbstractController
         $entityManager->flush();
 
         foreach ($pieces as $piece) {
-            $this->generatePositionBitboardsByPiece($piece, 9, 9);
             $piece->setPromoted(false);
+            $originalColor = $piece->getOriginalColor();
+            $piece->setColor($originalColor);
             $entityManager->persist($piece);
         }
         $entityManager->flush();
+
 
         //Generate a BitBoard with all the pieces in the initial position
         $this->generateAllPiecesPositionBitBoard();
@@ -141,21 +198,20 @@ class ChessController extends AbstractController
      * Update all neede Db's after a move have being made
      *
      */
-    public function generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to)
+    public function generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to, $insert = false)
     {
-        $entityManager = $this->getDoctrine()->getManager();
 
         //I change the  piece "current_position_bitboard"
-        $this->generateBitBoardInitialPositionPerPiece($piece, $row_to, $col_to);
+        $this->generateBitBoardInitialPositionPerPiece($piece, $row_to, $col_to, $insert);
 
-        //Generate a BitBoard with all the WHITE pieces in the initial position
+        //Generate a BitBoard with all the pieces in the current position
+        $this->generateAllPiecesPositionBitBoardByCurrentPositionBitboards();
+
+        //Generate a BitBoard with all the WHITE pieces in the current position
         $this->generateWhitePiecesPositionBitBoardByCurrentPositionBitboards();
 
-        //Generate a BitBoard with all the BLACK pieces in the initial position
+        //Generate a BitBoard with all the BLACK pieces in the current position
         $this->generateBlackPiecesPositionBitBoardByCurrentPositionBitboards();
-
-        //Generate a BitBoard with all the pieces in the initial position
-        $this->generateAllPiecesPositionBitBoardByCurrentPositionBitboards();
 
 
         return new JsonResponse(['res' => 'ok']);
@@ -210,8 +266,6 @@ class ChessController extends AbstractController
         $entityManager->persist($bitBoardAllPieces);
         $entityManager->flush();
 
-
-        return new JsonResponse("ok");
     }
 
     /**
@@ -263,8 +317,6 @@ class ChessController extends AbstractController
         $entityManager->persist($bitBoardAllPieces);
         $entityManager->flush();
 
-
-        return new JsonResponse("ok");
     }
 
 
@@ -319,8 +371,6 @@ class ChessController extends AbstractController
         $entityManager->persist($bitBoardAllPieces);
         $entityManager->flush();
 
-
-        return new JsonResponse("ok");
     }
 
 
@@ -350,6 +400,8 @@ class ChessController extends AbstractController
                 $this->generateBitBoardInitialPositionPerPiece($piece, $pieceRow, $pieceCol);
             }
 
+            $entityManager->flush();
+
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
             $stringArrayBitBoard = implode($bitBoardArray);
 
@@ -364,7 +416,6 @@ class ChessController extends AbstractController
             $bitBoardAllPieces->setBoard3($stringArrayBitBoard3);
 
             $entityManager->persist($bitBoardAllPieces);
-            $entityManager->flush();
 
         } else {
 
@@ -382,6 +433,8 @@ class ChessController extends AbstractController
                 $this->generateBitBoardInitialPositionPerPiece($piece, $pieceRow, $pieceCol);
             }
 
+            $entityManager->flush();
+
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
             $stringArrayBitBoard = implode($bitBoardArray);
 
@@ -396,18 +449,17 @@ class ChessController extends AbstractController
             $bitBoardAllPieces->setBoard3($stringArrayBitBoard3);
 
             $entityManager->persist($bitBoardAllPieces);
-            $entityManager->flush();
-
 
         }
-        return new JsonResponse("ok");
+        $entityManager->flush();
+
     }
 
 
     /**
      * Generate all current_position bitboars by pieces inital position
      */
-    public function generateBitBoardInitialPositionPerPiece($piece, $row, $col)
+    public function generateBitBoardInitialPositionPerPiece($piece, $row, $col, $insert = false)
     {
         $entityManager = $this->getDoctrine()->getManager();
         $bitBoardPieceActualPosition = new Bitboard();
@@ -418,14 +470,18 @@ class ChessController extends AbstractController
             'name' => 'current_position',
         ]);
 
+        if ($insert == true) {
+            $checkIfAlreadyExiste->setPieceDeleted(false);
+            $entityManager->persist($checkIfAlreadyExiste);
+            $entityManager->flush();
+        }
 
-        //Si yá existe, lo actualizo a la posición Inicial de la piza, sino creo uno nuevo.
+        //Si yá existe, lo actualizo  sino creo uno nuevo.
         if ($checkIfAlreadyExiste && !$checkIfAlreadyExiste->getPieceDeleted()) {
             $matrix[$row][$col] = 1;
-            $piece->addBitboard($checkIfAlreadyExiste);
+
             $checkIfAlreadyExiste->setRow($row);
             $checkIfAlreadyExiste->setCol($col);
-
             $checkIfAlreadyExiste->setName("current_position");
             $checkIfAlreadyExiste->setColor($piece->getColor());
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
@@ -466,8 +522,6 @@ class ChessController extends AbstractController
             $entityManager->persist($bitBoardPieceActualPosition);
             $entityManager->persist($piece);
         }
-        $entityManager->flush();
-
     }
 
 
@@ -537,10 +591,8 @@ class ChessController extends AbstractController
             $entityManager->persist($bitBoardAllPieces);
             $entityManager->flush();
 
-
         }
 
-        return new JsonResponse("ok");
     }
 
     public function generateBlackPiecesPositionBitBoard()
@@ -581,8 +633,38 @@ class ChessController extends AbstractController
             $entityManager->flush();
         } else {
 
+            $entityManager->remove($checkIfAlreadyExiste);
+            $entityManager->flush();
+
+            $bitBoardAllPieces = new Bitboard();
+            $matrix = $this->matrixCreateWithoutModel(9, 9);
+
+            $bitBoardAllPieces->setName('all_black_pieces');
+
+            foreach ($pieces as $piece) {
+                $pieceRow = $piece->getRow();
+                $pieceCol = $piece->getCol();
+                $matrix[$pieceRow][$pieceCol] = 1;
+            }
+
+            $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
+            $stringArrayBitBoard = implode($bitBoardArray);
+
+            $bitBoardAllPieces->setBitboard($stringArrayBitBoard);
+            $stringArrayBitBoard1 = substr($stringArrayBitBoard, 0, 27);
+            $stringArrayBitBoard2 = substr($stringArrayBitBoard, 26, 27);
+            $stringArrayBitBoard3 = substr($stringArrayBitBoard, 54, 27);
+
+            $bitBoardAllPieces->setBoard1($stringArrayBitBoard1);
+            $bitBoardAllPieces->setBoard2($stringArrayBitBoard2);
+            $bitBoardAllPieces->setBoard3($stringArrayBitBoard3);
+
+
+            $entityManager->persist($bitBoardAllPieces);
+            $entityManager->flush();
+
+
         }
-        return new JsonResponse("ok");
     }
 
 
@@ -593,8 +675,8 @@ class ChessController extends AbstractController
 
         for ($i = 0; $i < $row; $i++) {
             for ($j = 0; $j < $col; $j++) {
-
                 $checkIfAlreadyExiste = false;
+
                 $checkIfAlreadyExiste = $entityManager->getRepository('App:Bitboard')->findOneBy(
                     [
                         'piece' => $piece,
@@ -634,7 +716,7 @@ class ChessController extends AbstractController
                 }
             }
         }
-        $entityManager->flush();
+
     }
 
 

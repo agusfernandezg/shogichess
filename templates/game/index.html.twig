@@ -10,6 +10,9 @@
 {% block body %}
     <style>
 
+        .container {
+            background: aliceblue;
+        }
 
         .red {
             color: #b0413e;
@@ -56,32 +59,64 @@
             display: none;
         }
 
+        #black_eaten {
+            display: flex;
+            flex-direction: row;
+        }
+
+        #white_eaten {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .white-eaten-piece {
+            background: white;
+            color: black;
+        }
+
+        .black-eaten-piece {
+            background: black;
+            color: white;
+        }
+
+        .active {
+            background: rebeccapurple;
+        }
+
+        .eaten {
+            margin: 10px;
+            height: 30px;
+            width: 30px;
+            border: 1px solid #4e555b;
+        }
+
     </style>
 
     <div class="example-wrapper">
-        <!--<h1>Game Shogi ✅</h1>-->
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1> Shogi </h1>
+            </div>
+        </div>
+        <hr>
 
         <div class="row">
-            <div class="col-6">
-                <div class="row">
-                    <div class="col-12">
+            <div class="col-12 text-center">
+                <div class="row row align-items-center justify-content-center">
+                    <div id="board_container">
+                        <div id="black_eaten">
+                            {{ eatenPieces.black | raw }}
+                        </div>
                         <div id="main_board">
                             {{ board | raw }}
                         </div>
-
+                        <div id="white_eaten">
+                            {{ eatenPieces.white | raw }}
+                        </div>
                     </div>
                 </div>
                 <hr>
                 <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <button class="form-control succes" id="promote_piece">
-                                <span class="spinner-border spinner-border-sm is-fetching" role="status"
-                                      aria-hidden="true"></span>
-                                Promote Piece
-                            </button>
-                        </div>
-                    </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <button class="form-control succes" id="reset_board">
@@ -91,31 +126,30 @@
                             </button>
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <button class="form-control succes" id="promote_piece">
+                                <span class="spinner-border spinner-border-sm is-fetching" role="status"
+                                      aria-hidden="true"></span>
+                                Promote Piece
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <hr>
                 <div class="row hide">
                     <div class="col-12">
                         <div class="form-group">
-                            <label>Piece</label>
                             <input class="form-control" id="piece_id" disabled>
                         </div>
                         <div class="form-group">
-                            <label>Row To</label>
                             <input class="form-control" id="row_to" disabled>
                         </div>
                         <div class="form-group">
-                            <label>Col To</label>
                             <input class="form-control" id="col_to" disabled>
                         </div>
-                        <div id="alert_datos" class="alert  alert-warning alert-dismissible fade show">
-                            <strong>Completar movimiento!</strong> Por Favor seleccione pieza y destino.
-                        </div>
                         <div class="form-group">
-                            <button class="form-control succes" id="make_move">
-                                <span class="spinner-border spinner-border-sm is-fetching" role="status"
-                                      aria-hidden="true"></span>
-                                Make Move
-                            </button>
+                            <input class="form-control" id="add_piece_flag" value="0" disabled>
                         </div>
                     </div>
                 </div>
@@ -127,25 +161,88 @@
 
         (function () {
 
-            document.getElementById('alert_datos').style.display = 'none';
-            isFetching(false);
-
-            const make_move = document.getElementById('make_move');
             const reset_board = document.getElementById('reset_board');
+
+            isFetching(false);
+            eatenClicks()
+            clickCell();
+
 
             reset_board.addEventListener('click', function () {
                 resetBoardDbs();
+                const whiteEatenDiv = document.getElementById('white_eaten');
+                whiteEatenDiv.innerHTML = "";
+                const blackEatenDiv = document.getElementById('black_eaten');
+                blackEatenDiv.innerHTML = "";
             });
+
+
+            function addPieceback(row_to, col_to) {
+
+                let id_piece = getSelectedAddPieceDive();
+
+                var httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = function (data) {
+                    if (httpRequest.readyState === 4) {
+
+                        const addFlag = document.getElementById('add_piece_flag');
+                        addFlag.value = 0;
+                    }
+                };
+
+                httpRequest.open('POST', '{{ path('add_piece_back') }}')
+                httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+                httpRequest.send('id_piece=' + id_piece + '&row_to=' + row_to + '&col_to=' + col_to)
+            }
+
+            function getSelectedAddPieceDive() {
+                var lists = document.querySelectorAll(".eaten");
+                let piece_id = "";
+
+                for (let el of lists) {
+                    if (el.classList.contains('active')) {
+                        piece_id = el.id;
+                        break
+                    }
+                }
+
+                return piece_id;
+
+            }
+
+
+            function eatenClicks() {
+                var lists = document.querySelectorAll(".eaten");
+                doSomething = function () {
+                    const addFlag = document.getElementById('add_piece_flag');
+                    let flagValue = addFlag.value;
+
+                    if (flagValue == 0) {
+                        this.classList.add('active');
+                        addFlag.value = 1
+                    } else {
+                        this.classList.remove('active');
+                        addFlag.value = 0
+                    }
+
+                };
+
+                [].map.call(lists, function (elem) {
+                    elem.addEventListener("click", doSomething, false);
+                });
+
+            }
 
 
             function getMainBoard() {
                 var httpRequest = new XMLHttpRequest()
-                httpRequest.onreadystatechange = function (data) {
+                httpRequest.onreadystatechange = function () {
                     if (httpRequest.readyState === 4) {
                         const resultObject = JSON.parse(httpRequest.response);
                         const main_board = document.getElementById('main_board');
                         main_board.innerHTML = resultObject.board;
                         clickCell();
+                        eatenClicks();
                     }
                 };
                 httpRequest.open('POST', '{{ path('get_main_board') }}')
@@ -157,7 +254,7 @@
                 isFetching(true);
                 reset_board.disabled = true;
                 var httpRequest = new XMLHttpRequest()
-                httpRequest.onreadystatechange = function (data) {
+                httpRequest.onreadystatechange = function () {
                     if (httpRequest.readyState === 4) {
                         isFetching(false);
                         getMainBoard();
@@ -173,6 +270,16 @@
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
+                        const resultObject = JSON.parse(httpRequest.response);
+
+                        let whiteEaten = resultObject.white;
+                        let blackEaten = resultObject.black;
+
+                        const whiteEatenDiv = document.getElementById('white_eaten');
+                        whiteEatenDiv.innerHTML = whiteEaten;
+                        const blackEatenDiv = document.getElementById('black_eaten');
+                        blackEatenDiv.innerHTML = blackEaten;
+
                         getMainBoard();
                     }
                 };
@@ -186,9 +293,7 @@
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-
                         clearBoard("move_to_table");
-
                         const resultObject = JSON.parse(httpRequest.response);
                         const possibleMovesClear = resultObject.possibleMovesArray.clear;
                         const possibleMovesEat = resultObject.possibleMovesArray.eat;
@@ -205,7 +310,6 @@
                             let id = "" + obj[0] + obj[1];
                             document.getElementById(id).classList.add("eatable");
                         }
-
                     }
                 };
 
@@ -226,33 +330,11 @@
             }
 
 
-            clickCell();
-
-            function clickCell() {
-                var row = document.getElementById('move_to_table').rows;
-                for (var i = 0; i < row.length; i++) {
-                    for (var j = 0; j < row[i].cells.length; j++) {
-                        //console.log(row[i].cells[j].innerHTML);
-                        row[i].cells[j].addEventListener('click', function (e) {
-                            let row = this.getAttribute("data-row");
-                            let col = this.getAttribute("data-col");
-                            let id_piece = this.getAttribute("data-piece");
-                            let eatable = this.classList.contains('eatable')
-
-                            setRowCol(row, col, id_piece, eatable);
-                        })
-                    }
-                }
-            }
-
             function setRowCol(row, col, id_piece, eatable) {
 
                 if (id_piece != "" && !eatable) {
                     document.getElementById('piece_id').value = id_piece;
-                    document.getElementById('alert_datos').style.display = 'none';
-                    make_move.disabled = true;
                     sendMove(id_piece);
-                    make_move.disabled = false;
 
                 } else {
                     let id_celda = row + col;
@@ -268,13 +350,12 @@
                         let promoted = pieza.classList.contains("promoted") ? '1' : '0';
                         let color = pieza.classList.contains("white") ? 'white' : 'black';
                         promoted == 0 ? checkIfPromotable(id_piece, row_to, col_to, color) : "";
-                        make_move.disabled = true;
                         makeMove(id_piece, row_to, col_to, eatable);
-                        make_move.disabled = false;
                     }
 
                 }
             }
+
 
             function isFetching(bool) {
                 var els = document.getElementsByClassName('is-fetching');
@@ -282,7 +363,6 @@
                     bool == true ? el.style.opacity = "1" : el.style.opacity = "0";
                 });
             }
-
 
             function checkIfPromotable(id_piece, row, col, color) {
                 let promotionAreaArray = promotionArea(color);
@@ -322,7 +402,6 @@
                         arrayPromotionArea = [];
                         break;
                 }
-
                 return arrayPromotionArea;
             }
 
@@ -343,6 +422,7 @@
                     });
             }
 
+
             function promotePiece(id_piece) {
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
@@ -358,9 +438,32 @@
             }
 
 
+            function clickCell() {
+                var row = document.getElementById('move_to_table').rows;
+                for (var i = 0; i < row.length; i++) {
+                    for (var j = 0; j < row[i].cells.length; j++) {
+                        //console.log(row[i].cells[j].innerHTML);
+                        row[i].cells[j].addEventListener('click', function (e) {
+                            let row = this.getAttribute("data-row");
+                            let col = this.getAttribute("data-col");
+                            let id_piece = this.getAttribute("data-piece");
+                            let eatable = this.classList.contains('eatable');
+                            const addFlag = document.getElementById('add_piece_flag');
+                            let addPieceFlagValue = addFlag.value;
+
+                            if (addPieceFlagValue == 1) {
+                                addPieceback(row, col)
+                            } else {
+                                setRowCol(row, col, id_piece, eatable);
+                            }
+
+                        })
+                    }
+                }
+            }
+
+
         })();
-
-
     </script>
 
 {% endblock %}

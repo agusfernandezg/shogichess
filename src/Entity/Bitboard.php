@@ -33,7 +33,7 @@ class Bitboard
     private $bitboard;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Piece", inversedBy="bitboards" , fetch="EAGER")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Piece", inversedBy="bitboards" , fetch="LAZY")
      */
     private $piece;
 
@@ -71,6 +71,11 @@ class Bitboard
      * @ORM\Column(type="boolean", nullable=true, options={"default":"0"})
      */
     private $pieceDeleted = false;
+
+    /**
+     * @ORM\Column(type="string", length=255,nullable=true)
+     */
+    private $originalColor;
 
 
     public function __construct()
@@ -200,6 +205,18 @@ class Bitboard
     public function setPieceDeleted(?bool $pieceDeleted): self
     {
         $this->pieceDeleted = $pieceDeleted;
+
+        return $this;
+    }
+
+    public function getOriginalColor(): ?string
+    {
+        return $this->originalColor;
+    }
+
+    public function setOriginalColor(string $originalColor): self
+    {
+        $this->originalColor = $originalColor;
 
         return $this;
     }

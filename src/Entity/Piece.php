@@ -74,6 +74,11 @@ class Piece
      */
     private $bitboards;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $originalColor;
+
 
     public function __construct()
     {
@@ -246,6 +251,18 @@ class Piece
                 $bitboard->setPiece(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getOriginalColor(): ?string
+    {
+        return $this->originalColor;
+    }
+
+    public function setOriginalColor(?string $originalColor): self
+    {
+        $this->originalColor = $originalColor;
 
         return $this;
     }
