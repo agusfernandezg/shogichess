@@ -47,4 +47,16 @@ class BitboardRepository extends ServiceEntityRepository
         ;
     }
     */
+
+    public function getKing($color)
+    {
+        $qb = $this->createQueryBuilder('b');
+        $qb->leftJoin('b.piece', 'piece');
+        $qb->where("piece.code ='king' ");
+        $qb->where("b.name = 'current_position' ");
+        $qb->andWhere("b.color =:color ");
+        $qb->setParameter(':color', $color);
+
+        return $qb;
+    }
 }

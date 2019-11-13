@@ -23,7 +23,7 @@
         }
 
         .eatable {
-            background: #b0413e !important;
+            background: #b0413e;
         }
 
         /*.cell {*/
@@ -88,6 +88,10 @@
             height: 30px;
             width: 30px;
             border: 1px solid #4e555b;
+        }
+
+        .jaque {
+            background: deeppink !important;
         }
 
     </style>
@@ -178,15 +182,14 @@
 
 
             function addPieceback(row_to, col_to) {
-
-                let id_piece = getSelectedAddPieceDive();
+                let id_piece = getSelectedAddPieceDiv();
 
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-
                         const addFlag = document.getElementById('add_piece_flag');
                         addFlag.value = 0;
+                        getMainBoard();
                     }
                 };
 
@@ -195,7 +198,7 @@
                 httpRequest.send('id_piece=' + id_piece + '&row_to=' + row_to + '&col_to=' + col_to)
             }
 
-            function getSelectedAddPieceDive() {
+            function getSelectedAddPieceDiv() {
                 var lists = document.querySelectorAll(".eaten");
                 let piece_id = "";
 
@@ -207,32 +210,28 @@
                 }
 
                 return piece_id;
-
             }
 
 
             function eatenClicks() {
-                var lists = document.querySelectorAll(".eaten");
-                doSomething = function () {
-                    const addFlag = document.getElementById('add_piece_flag');
-                    let flagValue = addFlag.value;
+                var boardContainer = document.getElementById("board_container");
 
-                    if (flagValue == 0) {
-                        this.classList.add('active');
-                        addFlag.value = 1
-                    } else {
-                        this.classList.remove('active');
-                        addFlag.value = 0
+                doSomething = function (event) {
+                    if (event.target.classList.contains('eaten')) {
+                        const addFlag = document.getElementById('add_piece_flag');
+                        let flagValue = addFlag.value;
+
+                        if (flagValue == 0) {
+                            event.target.classList.add('active');
+                            addFlag.value = 1
+                        } else {
+                            event.target.classList.remove('active');
+                            addFlag.value = 0
+                        }
                     }
-
                 };
-
-                [].map.call(lists, function (elem) {
-                    elem.addEventListener("click", doSomething, false);
-                });
-
+                boardContainer.addEventListener("click", doSomething, false);
             }
-
 
             function getMainBoard() {
                 var httpRequest = new XMLHttpRequest()
@@ -242,7 +241,7 @@
                         const main_board = document.getElementById('main_board');
                         main_board.innerHTML = resultObject.board;
                         clickCell();
-                        eatenClicks();
+                        getEatablePieces();
                     }
                 };
                 httpRequest.open('POST', '{{ path('get_main_board') }}')
@@ -266,20 +265,9 @@
             }
 
             function makeMove(id_piece, row_to, col_to, eatable) {
-
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        const resultObject = JSON.parse(httpRequest.response);
-
-                        let whiteEaten = resultObject.white;
-                        let blackEaten = resultObject.black;
-
-                        const whiteEatenDiv = document.getElementById('white_eaten');
-                        whiteEatenDiv.innerHTML = whiteEaten;
-                        const blackEatenDiv = document.getElementById('black_eaten');
-                        blackEatenDiv.innerHTML = blackEaten;
-
                         getMainBoard();
                     }
                 };
@@ -289,6 +277,27 @@
             }
 
 
+            function getEatablePieces() {
+
+                var httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = function (data) {
+                    if (httpRequest.readyState === 4) {
+                        const resultObject = JSON.parse(httpRequest.response);
+                        let whiteEaten = resultObject.white;
+                        let blackEaten = resultObject.black;
+
+                        const whiteEatenDiv = document.getElementById('white_eaten');
+                        whiteEatenDiv.innerHTML = whiteEaten;
+                        const blackEatenDiv = document.getElementById('black_eaten');
+                        blackEatenDiv.innerHTML = blackEaten;
+                    }
+                };
+                httpRequest.open('POST', '{{ path('get_eaten_pieces') }}')
+                httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+                httpRequest.send('');
+
+            }
+
             function sendMove(id_piece) {
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
@@ -297,6 +306,7 @@
                         const resultObject = JSON.parse(httpRequest.response);
                         const possibleMovesClear = resultObject.possibleMovesArray.clear;
                         const possibleMovesEat = resultObject.possibleMovesArray.eat;
+                        const jaqueCoordinates = resultObject.jaqueCoordinates;
 
 
                         for (let key in possibleMovesClear) {
@@ -310,6 +320,13 @@
                             let id = "" + obj[0] + obj[1];
                             document.getElementById(id).classList.add("eatable");
                         }
+
+
+                        let id = "" + jaqueCoordinates[0] + jaqueCoordinates[1];
+                        //console.log(id);
+                         document.getElementById(id).classList.add("jaque");
+
+
                     }
                 };
 
@@ -347,9 +364,11 @@
                         let row_to = document.getElementById('row_to').value;
                         let col_to = document.getElementById('col_to').value;
                         let pieza = document.querySelectorAll("[data-piece='" + id_piece + "']")[0];
+
                         let promoted = pieza.classList.contains("promoted") ? '1' : '0';
                         let color = pieza.classList.contains("white") ? 'white' : 'black';
                         promoted == 0 ? checkIfPromotable(id_piece, row_to, col_to, color) : "";
+
                         makeMove(id_piece, row_to, col_to, eatable);
                     }
 
@@ -417,7 +436,6 @@
                     .then((willPromote) => {
                         if (willPromote) {
                             promotePiece(id_piece);
-                            getMainBoard();
                         }
                     });
             }
@@ -428,7 +446,7 @@
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
                         const resultObject = JSON.parse(httpRequest.response);
-                        console.log(resultObject);
+                        getMainBoard();
                     }
                 };
 

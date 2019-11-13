@@ -96,10 +96,12 @@ class GameController extends AbstractController
             case 'white':
                 $ownPiecesBitBoard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_white_pieces']);
                 $enemyPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_black_pieces']);
+                $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('black')->getQuery()->execute()[0];
                 break;
             case'black':
                 $ownPiecesBitBoard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_black_pieces']);
                 $enemyPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_white_pieces']);
+                $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('white')->getQuery()->execute()[0];
                 break;
         }
 
@@ -109,9 +111,20 @@ class GameController extends AbstractController
         $baseMatrix = $this->matrixCreateWithoutModel(9, 9);
         $resultado = $this->getPieceVectorCoordinatesArrayToOwnPiece($baseMatrix, $bitBoardCurrentPiecePosition->getRow(), $bitBoardCurrentPiecePosition->getCol(), $own, $enemy, $piece);
 
+        $jaqueCoordinates = $this->jaqueCheck($kingBitboard, $resultado);
+
         return new JsonResponse([
-            'possibleMovesArray' => $resultado
+            'possibleMovesArray' => $resultado,
+            'jaqueCoordinates' => $jaqueCoordinates,
         ]);
+    }
+
+    public function jaqueCheck($king, $actualPieceMoves)
+    {
+        $coordinate = [$king->getRow(), $king->getCol()];
+        $resultado = array_search($coordinate, $actualPieceMoves['eat']);
+
+        return isset($actualPieceMoves['eat'][$resultado]) ? $actualPieceMoves['eat'][$resultado] : [];
     }
 
 

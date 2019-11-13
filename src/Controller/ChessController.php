@@ -24,7 +24,6 @@ class ChessController extends AbstractController
         $row_to = $request->get('row_to');
         $col_to = $request->get('col_to');
         $eat = $request->get('eatable');
-        $eatenPieces = [];
 
         //Get Piece
         $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
@@ -39,13 +38,10 @@ class ChessController extends AbstractController
             $entityManager->persist($victimBitboard);
             $entityManager->flush();
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
-            $eatenPieces = $this->getEatenPieces();
         } else {
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
-            $eatenPieces = $this->getEatenPieces();
         }
-
-        return new JsonResponse($eatenPieces);
+        return new JsonResponse();
     }
 
 
@@ -76,6 +72,10 @@ class ChessController extends AbstractController
     }
 
 
+    /**
+     * Generate all needes DBS for the game to work.
+     * @Route("/getEatenPieces", name="get_eaten_pieces")
+     */
     function getEatenPieces()
     {
         $entityManager = $this->getDoctrine()->getManager();
@@ -95,10 +95,10 @@ class ChessController extends AbstractController
             }
         }
 
-        return [
+        return new JsonResponse([
             'white' => $whitePiecesHtml,
             'black' => $blackPiecesHtml
-        ];
+        ]);
     }
 
     /**
