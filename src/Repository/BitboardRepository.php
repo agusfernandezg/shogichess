@@ -19,35 +19,6 @@ class BitboardRepository extends ServiceEntityRepository
         parent::__construct($registry, Bitboard::class);
     }
 
-    // /**
-    //  * @return Bitboard[] Returns an array of Bitboard objects
-    //  */
-    /*
-    public function findByExampleField($value)
-    {
-        return $this->createQueryBuilder('b')
-            ->andWhere('b.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('b.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
-
-    /*
-    public function findOneBySomeField($value): ?Bitboard
-    {
-        return $this->createQueryBuilder('b')
-            ->andWhere('b.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-    */
-
     public function getKing($color)
     {
         $qb = $this->createQueryBuilder('b');
@@ -59,4 +30,6 @@ class BitboardRepository extends ServiceEntityRepository
 
         return $qb;
     }
+
+
 }

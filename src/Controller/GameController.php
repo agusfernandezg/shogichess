@@ -124,7 +124,11 @@ class GameController extends AbstractController
         $coordinate = [$king->getRow(), $king->getCol()];
         $resultado = array_search($coordinate, $actualPieceMoves['eat']);
 
-        return isset($actualPieceMoves['eat'][$resultado]) ? $actualPieceMoves['eat'][$resultado] : [];
+        if ($resultado && isset($actualPieceMoves['eat'][$resultado])) {
+            return $actualPieceMoves['eat'][$resultado];
+        } else {
+            return [];
+        }
     }
 
 
