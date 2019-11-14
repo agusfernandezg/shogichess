@@ -111,7 +111,7 @@ class GameController extends AbstractController
         $baseMatrix = $this->matrixCreateWithoutModel(9, 9);
         $resultado = $this->getPieceVectorCoordinatesArrayToOwnPiece($baseMatrix, $bitBoardCurrentPiecePosition->getRow(), $bitBoardCurrentPiecePosition->getCol(), $own, $enemy, $piece);
 
-        $jaqueCoordinates = $this->jaqueCheck($kingBitboard, $resultado);
+        $jaqueCoordinates = $this->jaqueCheck($kingBitboard, $resultado, $piece);
 
         return new JsonResponse([
             'possibleMovesArray' => $resultado,
@@ -119,16 +119,35 @@ class GameController extends AbstractController
         ]);
     }
 
-    public function jaqueCheck($king, $actualPieceMoves)
+    public function jaqueCheck($kingBitboard, $actualPieceMoves, $piece)
     {
-        $coordinate = [$king->getRow(), $king->getCol()];
+        $coordinate = [$kingBitboard->getRow(), $kingBitboard->getCol()];
         $resultado = array_search($coordinate, $actualPieceMoves['eat']);
 
         if ($resultado && isset($actualPieceMoves['eat'][$resultado])) {
-            return $actualPieceMoves['eat'][$resultado];
+            return $this->itsMate($actualPieceMoves['eat'][$resultado]);
         } else {
             return [];
         }
+
+    }
+
+
+    /**
+     *
+     *- Está en Jaque, me puedo comer a la pieza que lo pone el jaque?
+     *- Las posiciónes a las que se puede mover el rey, siguen siendo atacádas por otras?
+     *- Puedo interponer una pieza?
+     *
+     **/
+    public function itsMate($jaqueCoordinates, $king = null, $actualPieceMoves = null, $piece = null)
+    {
+        $result = $jaqueCoordinates;
+        $possibleKingMoves = "";
+
+
+        return $result;
+
     }
 
 
@@ -385,7 +404,8 @@ class GameController extends AbstractController
 
         foreach ($arrayPieceMoves as $coordinate) {
             if (isset($matrixArray[$coordinate[0]][$coordinate[1]]) && !array_search([$coordinate[0], $coordinate[1]], $arrayOwnPieces)) {
-                if (array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces) != false) {
+                $belongToEnemyCoordinates = array_search([$coordinate[0], $coordinate[1]], $arrayEnemyPieces);
+                if ($belongToEnemyCoordinates !== false) {
                     array_push($arrayCoordinatesCanEat, $coordinate);
                 } else {
                     array_push($arrayCoordinatesClean, $coordinate);
