@@ -85,33 +85,9 @@ class GameController extends AbstractController
         //Get Piece
         $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
 
-        //Get Current Piece Posion Bitboard
-        $bitBoardCurrentPiecePosition = $entityManager->getRepository('App:Bitboard')->findOneBy([
-            'piece' => $piece,
-            'name' => 'current_position'
-        ]);
+        $resultado = $this->getPiecePossibleMoves($piece);
 
-        //Get Own Pieces BitBoard
-        switch ($piece->getColor()) {
-            case 'white':
-                $ownPiecesBitBoard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_white_pieces']);
-                $enemyPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_black_pieces']);
-                $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('black')->getQuery()->execute()[0];
-                break;
-            case'black':
-                $ownPiecesBitBoard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_black_pieces']);
-                $enemyPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_white_pieces']);
-                $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('white')->getQuery()->execute()[0];
-                break;
-        }
-
-        $own = $this->fromBitboardToCoordinatesArray(str_split($ownPiecesBitBoard->getBitboard()), 9, 9);
-        $enemy = $this->fromBitboardToCoordinatesArray(str_split($enemyPiecesBitboard->getBitboard()), 9, 9);
-
-        $baseMatrix = $this->matrixCreateWithoutModel(9, 9);
-        $resultado = $this->getPieceVectorCoordinatesArrayToOwnPiece($baseMatrix, $bitBoardCurrentPiecePosition->getRow(), $bitBoardCurrentPiecePosition->getCol(), $own, $enemy, $piece);
-
-        $jaqueCoordinates = $this->jaqueCheck($kingBitboard, $resultado, $piece);
+        $jaqueCoordinates = $this->jaqueCheck($piece, $resultado);
 
         return new JsonResponse([
             'possibleMovesArray' => $resultado,
@@ -119,13 +95,33 @@ class GameController extends AbstractController
         ]);
     }
 
-    public function jaqueCheck($kingBitboard, $actualPieceMoves, $piece)
+
+    function getKingBitboardByPiece($piece)
     {
+        $entityManager = $this->getDoctrine()->getManager();
+
+        //Get Own Pieces BitBoard
+        switch ($piece->getColor()) {
+            case 'white':
+                $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('black')->getQuery()->execute()[0];
+                break;
+            case'black':
+                $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('white')->getQuery()->execute()[0];
+                break;
+        }
+        return $kingBitboard;
+    }
+
+
+    public function jaqueCheck($piece, $actualPieceMoves)
+    {
+        $kingBitboard = $this->getKingBitboardByPiece($piece);
         $coordinate = [$kingBitboard->getRow(), $kingBitboard->getCol()];
         $resultado = array_search($coordinate, $actualPieceMoves['eat']);
 
+
         if ($resultado && isset($actualPieceMoves['eat'][$resultado])) {
-            return $this->itsMate($actualPieceMoves['eat'][$resultado]);
+            return $this->itsMate($piece, $actualPieceMoves['eat'][$resultado]);
         } else {
             return [];
         }
@@ -140,13 +136,71 @@ class GameController extends AbstractController
      *- Puedo interponer una pieza?
      *
      **/
-    public function itsMate($jaqueCoordinates, $king = null, $actualPieceMoves = null, $piece = null)
+    public function itsMate($piece, $actualPieceMoves = null)
     {
-        $result = $jaqueCoordinates;
-        $possibleKingMoves = "";
+        $entityManager = $this->getDoctrine()->getManager();
+
+        //Get Current Piece Posion Bitboard
+        $bitBoardCurrentPiecePosition = $entityManager->getRepository('App:Bitboard')->findOneBy([
+            'piece' => $piece,
+            'name' => 'current_position'
+        ]);
+
+        $king = $this->getKingBitboardByPiece($piece)->getPiece();
+
+        // 1 - Can I go away from de atack position?
+        $possibleKingMoves = $this->getPiecePossibleMoves($king);
+
+        $pieceCoords = [$bitBoardCurrentPiecePosition->getRow(), $bitBoardCurrentPiecePosition->getCol()];
 
 
-        return $result;
+        //If the king can eat the piece that its making the jaque, theres no mate.
+        //!!!!!!!!!!!!!!!!Here I need another check, to see if after that move, the king still in jaque.
+        if (array_search($pieceCoords, $possibleKingMoves['eat']) !== false) {
+            print_r("No Mate");
+        }
+
+
+
+
+
+        // 2 - Can the king eat that piece?
+
+
+        return $king;
+
+    }
+
+
+    function getPiecePossibleMoves($piece)
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+
+        //Get Current Piece Posion Bitboard
+        $bitBoardCurrentPiecePosition = $entityManager->getRepository('App:Bitboard')->findOneBy([
+            'piece' => $piece,
+            'name' => 'current_position'
+        ]);
+
+        //Get Own Pieces BitBoard
+        switch ($piece->getColor()) {
+            case 'white':
+                $ownPiecesBitBoard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_white_pieces']);
+                $enemyPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_black_pieces']);
+                break;
+            case'black':
+                $ownPiecesBitBoard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_black_pieces']);
+                $enemyPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_white_pieces']);
+                break;
+        }
+
+        $own = $this->fromBitboardToCoordinatesArray(str_split($ownPiecesBitBoard->getBitboard()), 9, 9);
+        $enemy = $this->fromBitboardToCoordinatesArray(str_split($enemyPiecesBitboard->getBitboard()), 9, 9);
+
+        $baseMatrix = $this->matrixCreateWithoutModel(9, 9);
+        $resultado = $this->getPieceVectorCoordinatesArrayToOwnPiece($baseMatrix, $bitBoardCurrentPiecePosition->getRow(), $bitBoardCurrentPiecePosition->getCol(), $own, $enemy, $piece);
+
+        return $resultado;
 
     }
 
