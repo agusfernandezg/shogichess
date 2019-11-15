@@ -88,10 +88,12 @@ class GameController extends AbstractController
         $resultado = $this->getPiecePossibleMoves($piece);
 
         $jaqueCoordinates = $this->jaqueCheck($piece, $resultado);
+        $calculateMate = $this->calculateMate($piece);
 
         return new JsonResponse([
             'possibleMovesArray' => $resultado,
             'jaqueCoordinates' => $jaqueCoordinates,
+            'AllEnemyPossibleAtacks' => $calculateMate
         ]);
     }
 
@@ -117,11 +119,11 @@ class GameController extends AbstractController
     {
         $kingBitboard = $this->getKingBitboardByPiece($piece);
         $coordinate = [$kingBitboard->getRow(), $kingBitboard->getCol()];
-        $resultado = array_search($coordinate, $actualPieceMoves['eat']);
+        $jaqueCoord = array_search($coordinate, $actualPieceMoves['eat']);
 
+        if ($jaqueCoord && isset($actualPieceMoves['eat'][$jaqueCoord])) {
+            return $actualPieceMoves['eat'][$jaqueCoord];
 
-        if ($resultado && isset($actualPieceMoves['eat'][$resultado])) {
-            return $this->itsMate($piece, $actualPieceMoves['eat'][$resultado]);
         } else {
             return [];
         }
@@ -136,38 +138,81 @@ class GameController extends AbstractController
      *- Puedo interponer una pieza?
      *
      **/
-    public function itsMate($piece, $actualPieceMoves = null)
+    public function calculateMate($piece)
     {
         $entityManager = $this->getDoctrine()->getManager();
-
-        //Get Current Piece Posion Bitboard
-        $bitBoardCurrentPiecePosition = $entityManager->getRepository('App:Bitboard')->findOneBy([
-            'piece' => $piece,
-            'name' => 'current_position'
-        ]);
 
         $king = $this->getKingBitboardByPiece($piece)->getPiece();
 
         // 1 - Can I go away from de atack position?
         $possibleKingMoves = $this->getPiecePossibleMoves($king);
 
-        $pieceCoords = [$bitBoardCurrentPiecePosition->getRow(), $bitBoardCurrentPiecePosition->getCol()];
+        $color = $piece->getColor() == 'black' ? 'black' : 'white';
 
+        $allPossibleAtacksCoordsOfTheEnemy = $this->getAtackBoardByTeam($color);
 
-        //If the king can eat the piece that its making the jaque, theres no mate.
-        //!!!!!!!!!!!!!!!!Here I need another check, to see if after that move, the king still in jaque.
-        if (array_search($pieceCoords, $possibleKingMoves['eat']) !== false) {
-            print_r("No Mate");
+        //All possible king moves are under possible atack?
+        //  * Values in array1 not in array2 (more)
+        //  * Values in array2 not in array1 (less)
+        //  * Values in array1 and in array2 but different (diff)
+
+        $allPossibleAtacksCoordsOfTheEnemyEat = [];
+        $allPossibleAtacksCoordsOfTheEnemyClear = [];
+
+        foreach ($allPossibleAtacksCoordsOfTheEnemy as $coord) {
+            foreach ($coord['clear'] as $clear) {
+                array_push($allPossibleAtacksCoordsOfTheEnemyClear, $clear);
+            }
+            foreach ($coord['eat'] as $eat) {
+                array_push($allPossibleAtacksCoordsOfTheEnemyEat, $eat);
+            }
         }
 
 
+        $result = $this->compare_multi_Arrays(array_merge($allPossibleAtacksCoordsOfTheEnemyEat, $allPossibleAtacksCoordsOfTheEnemyClear), array_merge($possibleKingMoves['eat'], $possibleKingMoves['clear']));
+
+        return $allPossibleAtacksCoordsOfTheEnemy;
+    }
+
+    function getAtackBoardByTeam($color)
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $coords = [];
+        $pieces = [];
+        //Get Own Pieces BitBoard
+        switch ($color) {
+            case 'black':
+                $pieces = $entityManager->getRepository('App:Piece')->findBy(['color' => $color]);
+                $ownPiecesBitBoard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_white_pieces']);
+                $enemyPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_black_pieces']);
+                break;
+            case'white':
+                $pieces = $entityManager->getRepository('App:Piece')->findBy(['name' => $color]);
+                $ownPiecesBitBoard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_black_pieces']);
+                $enemyPiecesBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy(['name' => 'all_white_pieces']);
+                break;
+        }
+
+        $own = $this->fromBitboardToCoordinatesArray(str_split($ownPiecesBitBoard->getBitboard()), 9, 9);
+        $enemy = $this->fromBitboardToCoordinatesArray(str_split($enemyPiecesBitboard->getBitboard()), 9, 9);
+
+        foreach ($pieces as $piece) {
+
+            $bitBoardCurrentPiecePosition = $entityManager->getRepository('App:Bitboard')->findOneBy([
+                'piece' => $piece,
+                'name' => 'current_position'
+            ]);
+            $own = $this->fromBitboardToCoordinatesArray(str_split($ownPiecesBitBoard->getBitboard()), 9, 9);
+            $enemy = $this->fromBitboardToCoordinatesArray(str_split($enemyPiecesBitboard->getBitboard()), 9, 9);
+
+            $baseMatrix = $this->matrixCreateWithoutModel(9, 9);
+            $resultado = $this->getPieceVectorCoordinatesArrayToOwnPiece($baseMatrix, $bitBoardCurrentPiecePosition->getRow(), $bitBoardCurrentPiecePosition->getCol(), $own, $enemy, $piece);
+
+            array_push($coords, $resultado);
+        }
 
 
-
-        // 2 - Can the king eat that piece?
-
-
-        return $king;
+        return $coords;
 
     }
 
@@ -885,5 +930,44 @@ class GameController extends AbstractController
         return $arrayCoordinates;
     }
 
+    //results for array1 (when it is in more, it is in array1 and not in array2. same for less)
+
+    /**
+     *
+     * Values in array1 not in array2 (more)
+     * Values in array2 not in array1 (less)
+     * Values in array1 and in array2 but different (diff)
+     *
+     **/
+
+    function compare_multi_Arrays($array1, $array2)
+    {
+        $result = array("more" => array(), "less" => array(), "diff" => array());
+        foreach ($array1 as $k => $v) {
+            if (is_array($v) && isset($array2[$k]) && is_array($array2[$k])) {
+                $sub_result = $this->compare_multi_Arrays($v, $array2[$k]);
+                //merge results
+                foreach (array_keys($sub_result) as $key) {
+                    if (!empty($sub_result[$key])) {
+                        $result[$key] = array_merge_recursive($result[$key], array($k => $sub_result[$key]));
+                    }
+                }
+            } else {
+                if (isset($array2[$k])) {
+                    if ($v !== $array2[$k]) {
+                        $result["diff"][$k] = array("from" => $v, "to" => $array2[$k]);
+                    }
+                } else {
+                    $result["more"][$k] = $v;
+                }
+            }
+        }
+        foreach ($array2 as $k => $v) {
+            if (!isset($array1[$k])) {
+                $result["less"][$k] = $v;
+            }
+        }
+        return $result;
+    }
 
 }

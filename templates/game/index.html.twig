@@ -94,6 +94,10 @@
             background: deeppink !important;
         }
 
+        .atack {
+            background: lawngreen !important;
+        }
+
     </style>
 
     <div class="example-wrapper">
@@ -307,6 +311,7 @@
                         const possibleMovesClear = resultObject.possibleMovesArray.clear;
                         const possibleMovesEat = resultObject.possibleMovesArray.eat;
                         const jaqueCoordinates = resultObject.jaqueCoordinates;
+                        const allEnemyPossibleAtacks = resultObject.AllEnemyPossibleAtacks;
 
 
                         for (let key in possibleMovesClear) {
@@ -321,10 +326,27 @@
                             document.getElementById(id).classList.add("eatable");
                         }
 
+                        for (let key in allEnemyPossibleAtacks) {
+                            let obj = allEnemyPossibleAtacks[key];
+
+                            for (let key2 in obj.eat) {
+                                let obj2 = obj.eat[key2];
+                                let id1 = "" + obj2[0] + obj2[1];
+                                console.log(id1);
+                                document.getElementById(id1).classList.add("atack");
+                            }
+                            for (let key3 in obj.clear) {
+                                let obj3 = obj.clear[key3];
+                                let id2 = "" + obj3[0] + obj3[1];
+                                console.log(id2);
+                                document.getElementById(id2).classList.add("atack");
+                            }
+
+                        }
+
 
                         let id = "" + jaqueCoordinates[0] + jaqueCoordinates[1];
-                        //console.log(id);
-                         document.getElementById(id).classList.add("jaque");
+                        document.getElementById(id).classList.add("jaque");
 
 
                     }
@@ -371,7 +393,6 @@
 
                         makeMove(id_piece, row_to, col_to, eatable);
                     }
-
                 }
             }
 
