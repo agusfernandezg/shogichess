@@ -79,11 +79,17 @@ class Piece
      */
     private $originalColor;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\History", mappedBy="piece")
+     */
+    private $history;
+
 
     public function __construct()
     {
         $this->moves = new ArrayCollection();
         $this->bitboards = new ArrayCollection();
+        $this->history = new ArrayCollection();
     }
 
     public function __toString()
@@ -263,6 +269,37 @@ class Piece
     public function setOriginalColor(?string $originalColor): self
     {
         $this->originalColor = $originalColor;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|History[]
+     */
+    public function getHistory(): Collection
+    {
+        return $this->history;
+    }
+
+    public function addHistory(History $history): self
+    {
+        if (!$this->history->contains($history)) {
+            $this->history[] = $history;
+            $history->setPiece($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHistory(History $history): self
+    {
+        if ($this->history->contains($history)) {
+            $this->history->removeElement($history);
+            // set the owning side to null (unless already changed)
+            if ($history->getPiece() === $this) {
+                $history->setPiece(null);
+            }
+        }
 
         return $this;
     }

@@ -64,7 +64,6 @@ class GameController extends AbstractController
                     break;
             }
         }
-
         return [
             'white' => $whitePiecesHtml,
             'black' => $blackPiecesHtml
@@ -81,27 +80,57 @@ class GameController extends AbstractController
         $entityManager = $this->getDoctrine()->getManager();
         $request = $this->get('request_stack')->getCurrentRequest();
         $id_piece = $request->get('id_piece');
+        $validMove = false;
+        $colorTurn = "";
+
+        $history = $entityManager->getRepository('App:History')->findOneBy(
+            [],
+            ['date' => 'DESC']);
 
         //Get Piece
         $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
 
-        $resultado = $this->getPiecePossibleMoves($piece);
+        if ($history == null && $piece->getColor() == 'white') {
+            $validMove = true;
+            $colorTurn = "white";
+        } else if ($history == null && $piece->getColor() == 'black') {
+            $validMove = false;
+            $colorTurn = "white";
+        } else if ($history->getPiece()->getColor() == $piece->getColor()) {
+            $validMove = false;
+            $colorTurn = $piece->getColor() == 'black' ? 'black' : 'white';
+        } else {
+            $validMove = true;
+            $colorTurn = $piece->getColor();
+        }
 
-        $jaqueCoordinates = $this->jaqueCheck($piece, $resultado);
-        $calculateMate = $this->calculateMate($piece);
+        if ($validMove) {
+            $resultado = $this->getPiecePossibleMoves($piece);
+            $jaqueCoordinates = $this->jaqueCheck($piece, $resultado);
 
-        return new JsonResponse([
-            'possibleMovesArray' => $resultado,
-            'jaqueCoordinates' => $jaqueCoordinates,
-            'AllEnemyPossibleAtacks' => $calculateMate
-        ]);
+
+            return new JsonResponse([
+                'possibleMovesArray' => $resultado,
+                'jaqueCoordinates' => $jaqueCoordinates,
+                'validMove' => $validMove,
+                'colorTurn' => $colorTurn
+            ]);
+        } else {
+
+            return new JsonResponse([
+                'possibleMovesArray' => [],
+                'jaqueCoordinates' => [],
+                'validMove' => $validMove,
+                'colorTurn' => $colorTurn
+            ]);
+        }
+
     }
 
 
-    function getKingBitboardByPiece($piece)
+    function getKingBitboardByPieceColor($piece)
     {
         $entityManager = $this->getDoctrine()->getManager();
-
         //Get Own Pieces BitBoard
         switch ($piece->getColor()) {
             case 'white':
@@ -115,19 +144,43 @@ class GameController extends AbstractController
     }
 
 
+    /**
+     * @Route("/checkJaque", name="check_jaque")
+     */
+    public function checkJaque()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $request = $this->get('request_stack')->getCurrentRequest();
+        $id_piece = $request->get('id_piece');
+        $validMove = false;
+
+        //Get Piece
+        $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
+
+        $resultado = $this->getPiecePossibleMoves($piece);
+
+        $jaqueCoordinates = $this->jaqueCheck($piece, $resultado);
+
+        $calculateMate = $this->calculateMate($piece);
+
+        return new JsonResponse([
+            'jaqueCoordinates' => $jaqueCoordinates,
+            'calculateMate' => $calculateMate
+        ]);
+    }
+
+
     public function jaqueCheck($piece, $actualPieceMoves)
     {
-        $kingBitboard = $this->getKingBitboardByPiece($piece);
+        $kingBitboard = $this->getKingBitboardByPieceColor($piece);
         $coordinate = [$kingBitboard->getRow(), $kingBitboard->getCol()];
         $jaqueCoord = array_search($coordinate, $actualPieceMoves['eat']);
 
         if ($jaqueCoord && isset($actualPieceMoves['eat'][$jaqueCoord])) {
             return $actualPieceMoves['eat'][$jaqueCoord];
-
         } else {
             return [];
         }
-
     }
 
 
@@ -140,38 +193,82 @@ class GameController extends AbstractController
      **/
     public function calculateMate($piece)
     {
-        $entityManager = $this->getDoctrine()->getManager();
+        $kingBitboard = $this->getKingBitboardByPieceColor($piece)->getPiece();
 
-        $king = $this->getKingBitboardByPiece($piece)->getPiece();
-
-        // 1 - Can I go away from de atack position?
-        $possibleKingMoves = $this->getPiecePossibleMoves($king);
+        $possibleKingMoves = $this->mergeEatAndCleanCoordsNormal($this->getPiecePossibleMoves($kingBitboard));
 
         $color = $piece->getColor() == 'black' ? 'black' : 'white';
-
         $allPossibleAtacksCoordsOfTheEnemy = $this->getAtackBoardByTeam($color);
+        $allPossibleAtacksCoordsOfTheEnemyMerged = [];
 
-        //All possible king moves are under possible atack?
-        //  * Values in array1 not in array2 (more)
-        //  * Values in array2 not in array1 (less)
-        //  * Values in array1 and in array2 but different (diff)
 
-        $allPossibleAtacksCoordsOfTheEnemyEat = [];
-        $allPossibleAtacksCoordsOfTheEnemyClear = [];
-
-        foreach ($allPossibleAtacksCoordsOfTheEnemy as $coord) {
-            foreach ($coord['clear'] as $clear) {
-                array_push($allPossibleAtacksCoordsOfTheEnemyClear, $clear);
-            }
-            foreach ($coord['eat'] as $eat) {
-                array_push($allPossibleAtacksCoordsOfTheEnemyEat, $eat);
-            }
+        foreach ($allPossibleAtacksCoordsOfTheEnemy as $array) {
+            $result = [
+                'piece_id' => $array['piece_id'],
+                'coords' => $this->mergeEatAndCleanCoordsResultArray($array)
+            ];
+            array_push($allPossibleAtacksCoordsOfTheEnemyMerged, $result);
         }
 
+        $piecesAtackingTheKing = $this->getPiecesThatAtackKingPossibleMovePositions($possibleKingMoves, $allPossibleAtacksCoordsOfTheEnemyMerged);
 
-        $result = $this->compare_multi_Arrays(array_merge($allPossibleAtacksCoordsOfTheEnemyEat, $allPossibleAtacksCoordsOfTheEnemyClear), array_merge($possibleKingMoves['eat'], $possibleKingMoves['clear']));
+        return $piecesAtackingTheKing;
+    }
 
-        return $allPossibleAtacksCoordsOfTheEnemy;
+
+    function getPiecesThatAtackKingPossibleMovePositions($kingMoves, $enemyMoves)
+    {
+        $result = [];
+        $freeMove = [];
+        foreach ($kingMoves as $kingMove) {
+            $flag = false;
+            foreach ($enemyMoves as $enemyMove) {
+                foreach ($enemyMove['coords'] as $coord) {
+                    if ($kingMove == $coord) {
+                        $flag = true;
+                        array_push($result, ['piece_id' => $enemyMove['piece_id'], 'coord' => $coord]);
+                    }
+                }
+            }
+            $flag == false ? array_push($freeMove, $kingMove) : "";
+        }
+
+        return ['underAtack' => $result, 'freeMoves' => $freeMove];
+    }
+
+
+    function mergeEatAndCleanCoordsResultArray($array)
+    {
+        $result = [];
+        $clear = $array['result']['clear'];
+        $eat = $array['result']['eat'];
+
+        foreach ($clear as $cl) {
+            array_push($result, $cl);
+        }
+
+        foreach ($eat as $ea) {
+            array_push($result, $ea);
+        }
+
+        return $result;
+    }
+
+    function mergeEatAndCleanCoordsNormal($array)
+    {
+        $result = [];
+        $clear = $array['clear'];
+        $eat = $array['eat'];
+
+        foreach ($clear as $cl) {
+            array_push($result, $cl);
+        }
+
+        foreach ($eat as $ea) {
+            array_push($result, $ea);
+        }
+
+        return $result;
     }
 
     function getAtackBoardByTeam($color)
@@ -179,6 +276,7 @@ class GameController extends AbstractController
         $entityManager = $this->getDoctrine()->getManager();
         $coords = [];
         $pieces = [];
+
         //Get Own Pieces BitBoard
         switch ($color) {
             case 'black':
@@ -208,9 +306,12 @@ class GameController extends AbstractController
             $baseMatrix = $this->matrixCreateWithoutModel(9, 9);
             $resultado = $this->getPieceVectorCoordinatesArrayToOwnPiece($baseMatrix, $bitBoardCurrentPiecePosition->getRow(), $bitBoardCurrentPiecePosition->getCol(), $own, $enemy, $piece);
 
-            array_push($coords, $resultado);
+            array_push($coords, [
+                    'piece_id' => $piece->getId(),
+                    'result' => $resultado
+                ]
+            );
         }
-
 
         return $coords;
 
@@ -850,6 +951,20 @@ class GameController extends AbstractController
         $matrixHtml = "";
         $entityManager = $this->getDoctrine()->getManager();
         $matrixHtml .= "<table id='move_to_table'>";
+
+        $history = $entityManager->getRepository('App:History')->findOneBy(
+            [],
+            ['date' => 'DESC']);
+
+        if ($history) {
+            //$mateResult = $this->calculateMate($history->getPiece());
+            $mateResult['underAtack'] = [];
+            $mateResult['freeMoves'] = [];
+        } else {
+            $mateResult['underAtack'] = [];
+            $mateResult['freeMoves'] = [];
+        }
+
         for ($i = 0; $i < $row; $i++) {
             $matrixHtml .= "<tr>";
             for ($j = 0; $j < $col; $j++) {
@@ -860,14 +975,28 @@ class GameController extends AbstractController
                         'col' => $j,
                         'pieceDeleted' => false
                     ]);
-                $piece_first_letter = isset($pieceCurrentPositionBitboard) ? substr($pieceCurrentPositionBitboard->getPiece()->getName(), 0, 1) : 0;
+                $piece_first_letter = isset($pieceCurrentPositionBitboard) ? substr($pieceCurrentPositionBitboard->getPiece()->getName(), 0, 1) : "";
+
+
+
                 $piece_id = isset($pieceCurrentPositionBitboard) ? $pieceCurrentPositionBitboard->getPiece()->getId() : null;
                 $piece_color = isset($pieceCurrentPositionBitboard) ? $pieceCurrentPositionBitboard->getPiece()->getColor() : null;
                 $promoted = 'nopromoted';
+
+                $underAtack = "";
+                $freeMove = "";
+                if (array_search([$i, $j], $mateResult['underAtack'])!== false) {
+                    $underAtack = 'under-atack';
+                }
+                if (array_search([$i, $j], $mateResult['freeMoves'] )!== false) {
+                    $freeMove = 'free-move';
+                }
+
                 if (isset($pieceCurrentPositionBitboard) && $pieceCurrentPositionBitboard->getPiece()->getPromoted()) {
                     $promoted = 'promoted';
                 }
-                $matrixHtml .= "<td data-prom='" . $promoted . "' data-row='" . $i . "' data-col='" . $j . "' data-piece='" . $piece_id . "' id='" . $i . $j . "'  class='center cell " . $piece_color . " " . $promoted . "'>" . $piece_first_letter . "</td>";
+
+                $matrixHtml .= "<td data-prom='" . $promoted . "' data-row='" . $i . "' data-col='" . $j . "' data-piece='" . $piece_id . "' id='" . $i . $j . "'  class='center cell " . $piece_color . " " . $promoted . " " . $underAtack . " " . $freeMove . "'>" . $piece_first_letter . "</td>";
             }
             $matrixHtml .= "</tr>";
         }
