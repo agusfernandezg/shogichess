@@ -26,28 +26,36 @@
             background: #b0413e;
         }
 
-        /*.cell {*/
-        /*    text-align: center;*/
-        /*    cursor: pointer;*/
-        /*    min-width: 20px;*/
-        /*    min-height: 20px;*/
-        /*    border: 1px solid gainsboro;*/
-        /*    margin: auto;*/
-        /*}*/
+        tbody {
+            background-color: #FFC049;
+        }
+
         table, th, td {
-            padding: 10px;
+
             border: 1px solid black;
             border-collapse: collapse;
             cursor: pointer;
         }
 
+        table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        tr {
+            height: 3vw; /* Set this to whatever amount forms square cells */
+        }
+
         .cell:hover {
             /*color: orange;*/
-            background: orange;
+            /* background: orange;*/
+            font-weight: bold;
+            font-size: larger;
         }
 
         .white {
-            color: #00B8F5;
+            color: white;
+            font-weight: bold;
         }
 
         .black {
@@ -98,6 +106,18 @@
             background: lawngreen !important;
         }
 
+        .risk {
+            color: #ee2d4d;
+        }
+
+        .free-move {
+            background-color: #494f54;
+        }
+
+        .under-atack {
+            background-color: #ee2d4d;
+        }
+
     </style>
 
     <div class="example-wrapper">
@@ -110,22 +130,35 @@
 
         <div class="row">
             <div class="col-12 text-center">
-                <div class="row row align-items-center justify-content-center">
-                    <div id="board_container">
-                        <div id="black_eaten">
-                            {{ eatenPieces.black | raw }}
+                <div class="row">
+
+                    <div class="col-6">
+                        <div id="board_container">
+                            <div id="black_eaten">
+                                {{ eatenPieces.black | raw }}
+                            </div>
+                            <div id="main_board">
+                                {{ board | raw }}
+                            </div>
+                            <div id="white_eaten">
+                                {{ eatenPieces.white | raw }}
+                            </div>
                         </div>
-                        <div id="main_board">
-                            {{ board | raw }}
+                    </div>
+                    <div class="col-6 information">
+                        <div class="card" style="width: 18rem;">
+                            <div class="card-body">
+                                <h5 class="card-title">Game Information</h5>
+                                <p class="card-text game-information"></p>
+
+                            </div>
                         </div>
-                        <div id="white_eaten">
-                            {{ eatenPieces.white | raw }}
-                        </div>
+
                     </div>
                 </div>
                 <hr>
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <div class="form-group">
                             <button class="form-control succes" id="reset_board">
                                 <span class="spinner-border spinner-border-sm is-fetching" role="status"
@@ -134,15 +167,15 @@
                             </button>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <button class="form-control succes" id="promote_piece">
-                                <span class="spinner-border spinner-border-sm is-fetching" role="status"
-                                      aria-hidden="true"></span>
-                                Promote Piece
-                            </button>
-                        </div>
-                    </div>
+{#                    <div class="col-md-6">#}
+{#                        <div class="form-group">#}
+{#                            <button class="form-control succes" id="promote_piece">#}
+{#                                <span class="spinner-border spinner-border-sm is-fetching" role="status"#}
+{#                                      aria-hidden="true"></span>#}
+{#                                Promote Piece#}
+{#                            </button>#}
+{#                        </div>#}
+{#                    </div>#}
                 </div>
                 <hr>
                 <div class="row hide">
@@ -158,6 +191,9 @@
                         </div>
                         <div class="form-group">
                             <input class="form-control" id="add_piece_flag" value="0" disabled>
+                        </div>
+                        <div class="form-group">
+                            <input class="form-control" id="jaque" value="0" disabled>
                         </div>
                     </div>
                 </div>
@@ -259,6 +295,7 @@
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function () {
                     if (httpRequest.readyState === 4) {
+                        document.getElementById('jaque').value = "0";
                         isFetching(false);
                         getMainBoard();
                         reset_board.disabled = false;
@@ -302,70 +339,103 @@
 
             }
 
-            function sendMove(id_piece) {
-                var httpRequest = new XMLHttpRequest()
+            function checkJaque(id_piece) {
+                var httpRequest = new XMLHttpRequest();
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        clearBoard("move_to_table");
                         const resultObject = JSON.parse(httpRequest.response);
-                        const possibleMovesClear = resultObject.possibleMovesArray.clear;
-                        const possibleMovesEat = resultObject.possibleMovesArray.eat;
                         const jaqueCoordinates = resultObject.jaqueCoordinates;
-                        const allEnemyPossibleAtacks = resultObject.AllEnemyPossibleAtacks;
-
-
-                        for (let key in possibleMovesClear) {
-                            let obj = possibleMovesClear[key];
-                            let id = "" + obj[0] + obj[1];
-                            document.getElementById(id).classList.add("possible");
+                        if (jaqueCoordinates.length > 0) {
+                            let id = "" + jaqueCoordinates[0] + jaqueCoordinates[1];
+                            document.getElementById(id).classList.add("jaque");
+                            document.getElementById('jaque').value = "1";
+                            document.getElementsByClassName('game-information')[0].innerHTML = "<label>Jaque</label>";
+                        } else {
+                            document.getElementById('jaque').value = "0";
                         }
-
-                        for (let key in possibleMovesEat) {
-                            let obj = possibleMovesEat[key];
-                            let id = "" + obj[0] + obj[1];
-                            document.getElementById(id).classList.add("eatable");
-                        }
-
-                        for (let key in allEnemyPossibleAtacks) {
-                            let obj = allEnemyPossibleAtacks[key];
-
-                            for (let key2 in obj.eat) {
-                                let obj2 = obj.eat[key2];
-                                let id1 = "" + obj2[0] + obj2[1];
-                                console.log(id1);
-                                document.getElementById(id1).classList.add("atack");
-                            }
-                            for (let key3 in obj.clear) {
-                                let obj3 = obj.clear[key3];
-                                let id2 = "" + obj3[0] + obj3[1];
-                                console.log(id2);
-                                document.getElementById(id2).classList.add("atack");
-                            }
-
-                        }
-
-
-                        let id = "" + jaqueCoordinates[0] + jaqueCoordinates[1];
-                        document.getElementById(id).classList.add("jaque");
-
-
                     }
                 };
 
-                httpRequest.open('POST', '{{ path('move_piece') }}')
+                httpRequest.open('POST', '{{ path('check_jaque') }}')
                 httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
                 httpRequest.send('id_piece=' + id_piece)
             }
 
-            function clearBoard(table) {
+
+            function sendMove(id_piece) {
+                const jaque = document.getElementById('jaque').value
+
+                if (jaque != '1' || true) {
+
+                    var httpRequest = new XMLHttpRequest();
+                    httpRequest.onreadystatechange = function (data) {
+                        if (httpRequest.readyState === 4) {
+
+                            clearBoard("move_to_table");
+                            const resultObject = JSON.parse(httpRequest.response);
+                            const possibleMovesClear = resultObject.possibleMovesArray.clear;
+                            const possibleMovesEat = resultObject.possibleMovesArray.eat;
+                            const jaqueCoordinates = resultObject.jaqueCoordinates;
+                            const allEnemyPossibleAtacks = resultObject.AllEnemyPossibleAtacks;
+                            const validMove = resultObject.validMove;
+
+                            if (validMove) {
+                                for (let key in possibleMovesClear) {
+                                    let obj = possibleMovesClear[key];
+                                    let id = "" + obj[0] + obj[1];
+                                    document.getElementById(id).classList.add("possible");
+                                }
+
+                                for (let key in possibleMovesEat) {
+                                    let obj = possibleMovesEat[key];
+                                    let id = "" + obj[0] + obj[1];
+                                    document.getElementById(id).classList.add("eatable");
+                                }
+
+                                for (let key in allEnemyPossibleAtacks) {
+                                    let obj = allEnemyPossibleAtacks[key];
+                                    let id = "" + obj['coord'][0] + obj['coord'][1];
+                                    let pieza = document.querySelectorAll("[data-piece='" + obj['piece_id'] + "']")[0];
+                                    document.getElementById(id).classList.add("risk");
+                                }
+
+                                if (jaqueCoordinates.length > 0) {
+                                    let id = "" + jaqueCoordinates[0] + jaqueCoordinates[1];
+                                    document.getElementsByClassName('game-information')[0].innerHTML = "<label>Jaque</label>";
+                                    document.getElementById(id).classList.add("jaque");
+                                }
+
+                            } else {
+                                swal("It's other team turn!", "", "warning");
+                            }
+                        }
+                    };
+
+                    httpRequest.open('POST', '{{ path('move_piece') }}')
+                    httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+                    httpRequest.send('id_piece=' + id_piece)
+                } else {
+                    swal("Jaque", "", "warning");
+                }
+
+
+            }
+
+            function clearBoard(table, jaqueCoords = null) {
                 var row = document.getElementById('move_to_table').rows;
+                document.getElementsByClassName('game-information')[0].innerHTML = "";
                 var y;
                 for (var i = 0; i < row.length; i++) {
                     for (var j = 0; j < row[i].cells.length; j++) {
                         y = row[i].cells;
-                        y[j].classList.remove('possible', 'eatable');
+                        y[j].classList.remove('possible', 'eatable', 'jaque', 'risk');
                     }
                 }
+
+                if (jaqueCoords != null) {
+
+                }
+
             }
 
 

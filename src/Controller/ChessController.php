@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Bitboard;
+use App\Entity\History;
 use App\Entity\Matrix;
 use App\Entity\Matriz;
 use App\Entity\Piece;
@@ -28,6 +29,14 @@ class ChessController extends AbstractController
         //Get Piece
         $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
 
+        $history = new History();
+        $history->setCellTo($row_to . $col_to);
+        $history->setPiece($piece);
+        $now = new \DateTime(date('Y-m-d H:i:s', time()));
+        $history->setDate($now);
+        $entityManager->persist($history);
+        $entityManager->flush($history);
+
         if ($eat == "true") {
             $victimBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy([
                 'name' => 'current_position',
@@ -38,6 +47,7 @@ class ChessController extends AbstractController
             $entityManager->persist($victimBitboard);
             $entityManager->flush();
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
+
         } else {
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
         }
@@ -163,6 +173,9 @@ class ChessController extends AbstractController
         $curretPositionBitboars = $entityManager->getRepository('App:Bitboard')->findBy([
             'name' => 'current_position',
         ]);
+
+        $q = $entityManager->createQuery('delete from App\Entity\History where 1=1');
+        $numDeleted = $q->execute();
 
         foreach ($curretPositionBitboars as $bitboard) {
             $bitboard->setPieceDeleted(false);
