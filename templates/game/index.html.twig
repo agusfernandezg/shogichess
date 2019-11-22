@@ -167,15 +167,15 @@
                             </button>
                         </div>
                     </div>
-{#                    <div class="col-md-6">#}
-{#                        <div class="form-group">#}
-{#                            <button class="form-control succes" id="promote_piece">#}
-{#                                <span class="spinner-border spinner-border-sm is-fetching" role="status"#}
-{#                                      aria-hidden="true"></span>#}
-{#                                Promote Piece#}
-{#                            </button>#}
-{#                        </div>#}
-{#                    </div>#}
+                    {#                    <div class="col-md-6">#}
+                    {#                        <div class="form-group">#}
+                    {#                            <button class="form-control succes" id="promote_piece">#}
+                    {#                                <span class="spinner-border spinner-border-sm is-fetching" role="status"#}
+                    {#                                      aria-hidden="true"></span>#}
+                    {#                                Promote Piece#}
+                    {#                            </button>#}
+                    {#                        </div>#}
+                    {#                    </div>#}
                 </div>
                 <hr>
                 <div class="row hide">
@@ -333,10 +333,9 @@
                         blackEatenDiv.innerHTML = blackEaten;
                     }
                 };
-                httpRequest.open('POST', '{{ path('get_eaten_pieces') }}')
+                httpRequest.open('POST', '{{ path('get_eaten_pieces_json') }}')
                 httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
                 httpRequest.send('');
-
             }
 
             function checkJaque(id_piece) {
