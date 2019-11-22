@@ -416,8 +416,9 @@ class GameController extends AbstractController
         $coordinate = [$kingBitboard->getRow(), $kingBitboard->getCol()];
         $jaqueCoord = array_search($coordinate, $actualPieceMoves['eat']);
 
-        $this->calculateMate($piece);
         if ($jaqueCoord && isset($actualPieceMoves['eat'][$jaqueCoord])) {
+
+            $this->calculateMate($piece);
             return $actualPieceMoves['eat'][$jaqueCoord];
         } else {
             return [];
@@ -477,6 +478,7 @@ class GameController extends AbstractController
         $simulatedMoves = [];
         $mate = false;
         $entityManager = $this->getDoctrine()->getManager();
+        $canIEatThatDangerousPieces = [];
 
         //Free spaces that are not under atack and the king can move.
         $freeMoves = $piecesAtackingTheKing['freeMoves'];
@@ -492,7 +494,6 @@ class GameController extends AbstractController
             //If the king have no free moves, we will simulate what happens if we eat some of the pieces
             // that are avoiding the king to move
             if (count($underAtack) > 0) {
-
                 foreach ($underAtack as $atacker) {
                     $atacker_id = $atacker['piece_id'];
                     //Can I eat that piece?????
@@ -515,18 +516,16 @@ class GameController extends AbstractController
                             ]);
 
                             $coordMoveFrom = [$pieceCurrentBitBoardBeforeMove->getRow(), $pieceCurrentBitBoardBeforeMove->getCol()];
-
                             $this->makeMoveHere($piece_id, $coordMoveTo[0], $coordMoveTo[1]);
-
                             $result = $this->calculateMatePartial($piece_actual);
-
-
+                            array_push($canIEatThatDangerousPieces,$result);
                             $this->undoMove($piece_id, $coordMoveFrom[0], $coordMoveFrom[1], $victimBitboard);
                         }
                     }
-
-
                 }
+
+                $resultado= $canIEatThatDangerousPieces;
+
             }
 
         }
