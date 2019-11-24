@@ -67,14 +67,22 @@
             display: none;
         }
 
+        .info-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+
         #black_eaten {
             display: flex;
             flex-direction: row;
+            flex-wrap: wrap;
         }
 
         #white_eaten {
             display: flex;
             flex-direction: row;
+            flex-wrap: wrap;
         }
 
         .white-eaten-piece {
@@ -118,6 +126,7 @@
             background-color: #ee2d4d;
         }
 
+
     </style>
 
     <div class="example-wrapper">
@@ -127,33 +136,45 @@
             </div>
         </div>
         <hr>
-
         <div class="row">
-            <div class="col-12 text-center">
+            <div class="col-12 text-center" id="game_container">
                 <div class="row">
-
-                    <div class="col-6">
-                        <div id="board_container">
-                            <div id="black_eaten">
-                                {{ eatenPieces.black | raw }}
+                    <div class="col-4 info-column">
+                        <div class="card">
+                            <div class="card-header">
+                                Pieces captured by the Black Team
                             </div>
-                            <div id="main_board">
-                                {{ board | raw }}
+                            <div class="card-body">
+                                <div id="black_eaten">
+                                    {{ eatenPieces.black | raw }}
+                                </div>
                             </div>
-                            <div id="white_eaten">
-                                {{ eatenPieces.white | raw }}
+                        </div>
+                        <div class="card text-center" style="width: 18rem;">
+                            <div class="card-body">
+                                <h5 class="card-title">Game Information</h5>
+                                <p class="card-text" id="turn"></p>
+                                <p class="card-text" id="white_king_in_check"></p>
+                                <p class="card-text" id="black_king_in_check"></p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                Pieces captured by the White Team
+                            </div>
+                            <div class="card-body">
+                                <div id="white_eaten">
+                                    {{ eatenPieces.white | raw }}
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-6 information">
-                        <div class="card" style="width: 18rem;">
-                            <div class="card-body">
-                                <h5 class="card-title">Game Information</h5>
-                                <p class="card-text game-information"></p>
-
+                    <div class="col-8">
+                        <div id="board_container">
+                            <div id="main_board">
+                                {{ board | raw }}
                             </div>
                         </div>
-
                     </div>
                 </div>
                 <hr>
@@ -167,34 +188,14 @@
                             </button>
                         </div>
                     </div>
-                    {#                    <div class="col-md-6">#}
-                    {#                        <div class="form-group">#}
-                    {#                            <button class="form-control succes" id="promote_piece">#}
-                    {#                                <span class="spinner-border spinner-border-sm is-fetching" role="status"#}
-                    {#                                      aria-hidden="true"></span>#}
-                    {#                                Promote Piece#}
-                    {#                            </button>#}
-                    {#                        </div>#}
-                    {#                    </div>#}
                 </div>
                 <hr>
                 <div class="row hide">
                     <div class="col-12">
-                        <div class="form-group">
-                            <input class="form-control" id="piece_id" disabled>
-                        </div>
-                        <div class="form-group">
-                            <input class="form-control" id="row_to" disabled>
-                        </div>
-                        <div class="form-group">
-                            <input class="form-control" id="col_to" disabled>
-                        </div>
-                        <div class="form-group">
-                            <input class="form-control" id="add_piece_flag" value="0" disabled>
-                        </div>
-                        <div class="form-group">
-                            <input class="form-control" id="jaque" value="0" disabled>
-                        </div>
+                        <input class="form-control" id="piece_id" disabled>
+                        <input class="form-control" id="row_to" disabled>
+                        <input class="form-control" id="col_to" disabled>
+                        <input class="form-control" id="add_piece_flag" value="0" disabled>
                     </div>
                 </div>
             </div>
@@ -207,29 +208,27 @@
 
             const reset_board = document.getElementById('reset_board');
 
-            isFetching(false);
+            isFetching(false)
             eatenClicks()
-            clickCell();
-
+            clickCell()
 
             reset_board.addEventListener('click', function () {
-                resetBoardDbs();
+                resetBoardDbs()
                 const whiteEatenDiv = document.getElementById('white_eaten');
-                whiteEatenDiv.innerHTML = "";
+                whiteEatenDiv.innerHTML = ""
                 const blackEatenDiv = document.getElementById('black_eaten');
-                blackEatenDiv.innerHTML = "";
+                blackEatenDiv.innerHTML = ""
             });
 
 
             function addPieceback(row_to, col_to) {
-                let id_piece = getSelectedAddPieceDiv();
-
+                let id_piece = getSelectedAddPieceDiv()
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        const addFlag = document.getElementById('add_piece_flag');
-                        addFlag.value = 0;
-                        getMainBoard();
+                        const addFlag = document.getElementById('add_piece_flag')
+                        addFlag.value = 0
+                        getMainBoard()
                     }
                 };
 
@@ -239,33 +238,32 @@
             }
 
             function getSelectedAddPieceDiv() {
-                var lists = document.querySelectorAll(".eaten");
-                let piece_id = "";
+                var lists = document.querySelectorAll(".eaten")
+                let piece_id = ""
 
                 for (let el of lists) {
                     if (el.classList.contains('active')) {
-                        piece_id = el.id;
+                        piece_id = el.id
                         break
                     }
                 }
-
-                return piece_id;
+                return piece_id
             }
 
 
             function eatenClicks() {
-                var boardContainer = document.getElementById("board_container");
+                var boardContainer = document.getElementById("game_container");
 
                 doSomething = function (event) {
                     if (event.target.classList.contains('eaten')) {
-                        const addFlag = document.getElementById('add_piece_flag');
-                        let flagValue = addFlag.value;
+                        const addFlag = document.getElementById('add_piece_flag')
+                        let flagValue = addFlag.value
 
                         if (flagValue == 0) {
-                            event.target.classList.add('active');
+                            event.target.classList.add('active')
                             addFlag.value = 1
                         } else {
-                            event.target.classList.remove('active');
+                            event.target.classList.remove('active')
                             addFlag.value = 0
                         }
                     }
@@ -277,38 +275,57 @@
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function () {
                     if (httpRequest.readyState === 4) {
-                        const resultObject = JSON.parse(httpRequest.response);
-                        const main_board = document.getElementById('main_board');
-                        main_board.innerHTML = resultObject.board;
-                        clickCell();
-                        getEatablePieces();
+                        const resultObject = JSON.parse(httpRequest.response)
+                        const main_board = document.getElementById('main_board')
+                        main_board.innerHTML = resultObject.board
+                        clickCell()
+                        getEatablePieces()
                     }
                 };
                 httpRequest.open('POST', '{{ path('get_main_board') }}')
-                httpRequest.send();
+                httpRequest.send()
             }
 
 
             function resetBoardDbs() {
-                isFetching(true);
-                reset_board.disabled = true;
+                isFetching(true)
+                reset_board.disabled = true
+
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function () {
                     if (httpRequest.readyState === 4) {
-                        document.getElementById('jaque').value = "0";
-                        isFetching(false);
-                        getMainBoard();
-                        reset_board.disabled = false;
+                        document.getElementById('white_king_in_check').innerHTML = ''
+                        document.getElementById('black_king_in_check').innerHTML = ''
+                        isFetching(false)
+                        getMainBoard()
+                        reset_board.disabled = false
                     }
                 };
                 httpRequest.open('POST', '{{ path('clear_bds') }}')
-                httpRequest.send();
+                httpRequest.send()
             }
 
             function makeMove(id_piece, row_to, col_to, eatable) {
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
+                        const resultObject = JSON.parse(httpRequest.response)
+                        const jaqueSituation = resultObject.jaqueSituation
+                        const colorTurn = resultObject.colorTurn
+
+                        document.getElementById('turn').innerHTML = '<div class="alert alert-info" role="alert">' + colorTurn + ' team turn</div>';
+
+                        if (jaqueSituation.hasOwnProperty('jaque')) {
+                            if (jaqueSituation.jaque) {
+                                if (jaqueSituation.checkmate) {
+                                    document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Checkmate to the ' + jaqueSituation.color + ' team </div>'
+                                } else {
+                                    document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Check to the ' + jaqueSituation.color + ' team</div>'
+                                }
+                            } else {
+                                document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = ''
+                            }
+                        }
                         getMainBoard();
                     }
                 };
@@ -319,181 +336,132 @@
 
 
             function getEatablePieces() {
-
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        const resultObject = JSON.parse(httpRequest.response);
-                        let whiteEaten = resultObject.white;
-                        let blackEaten = resultObject.black;
+                        const resultObject = JSON.parse(httpRequest.response)
+                        let whiteEaten = resultObject.white
+                        let blackEaten = resultObject.black
 
-                        const whiteEatenDiv = document.getElementById('white_eaten');
-                        whiteEatenDiv.innerHTML = whiteEaten;
-                        const blackEatenDiv = document.getElementById('black_eaten');
-                        blackEatenDiv.innerHTML = blackEaten;
+                        const whiteEatenDiv = document.getElementById('white_eaten')
+                        whiteEatenDiv.innerHTML = whiteEaten
+                        const blackEatenDiv = document.getElementById('black_eaten')
+                        blackEatenDiv.innerHTML = blackEaten
                     }
                 };
                 httpRequest.open('POST', '{{ path('get_eaten_pieces_json') }}')
                 httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
-                httpRequest.send('');
-            }
-
-            function checkJaque(id_piece) {
-                var httpRequest = new XMLHttpRequest();
-                httpRequest.onreadystatechange = function (data) {
-                    if (httpRequest.readyState === 4) {
-                        const resultObject = JSON.parse(httpRequest.response);
-                        const jaqueCoordinates = resultObject.jaqueCoordinates;
-                        if (jaqueCoordinates.length > 0) {
-                            let id = "" + jaqueCoordinates[0] + jaqueCoordinates[1];
-                            document.getElementById(id).classList.add("jaque");
-                            document.getElementById('jaque').value = "1";
-                            document.getElementsByClassName('game-information')[0].innerHTML = "<label>Jaque</label>";
-                        } else {
-                            document.getElementById('jaque').value = "0";
-                        }
-                    }
-                };
-
-                httpRequest.open('POST', '{{ path('check_jaque') }}')
-                httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
-                httpRequest.send('id_piece=' + id_piece)
+                httpRequest.send('')
             }
 
 
             function sendMove(id_piece) {
-                const jaque = document.getElementById('jaque').value
+                var httpRequest = new XMLHttpRequest()
+                httpRequest.onreadystatechange = function (data) {
+                    if (httpRequest.readyState === 4) {
+                        clearBoard("move_to_table");
+                        const resultObject = JSON.parse(httpRequest.response)
+                        const possibleMovesClear = resultObject.possibleMovesArray.clear
+                        const possibleMovesEat = resultObject.possibleMovesArray.eat
+                        const allEnemyPossibleAtacks = resultObject.AllEnemyPossibleAtacks
+                        const validMove = resultObject.validMove
+                        const colorTurn = resultObject.colorTurn
 
-                if (jaque != '1' || true) {
+                        if (validMove) {
+                            document.getElementById('turn').innerHTML = '<div class="alert alert-info" role="alert">' + colorTurn + ' team turn</div>';
 
-                    var httpRequest = new XMLHttpRequest();
-                    httpRequest.onreadystatechange = function (data) {
-                        if (httpRequest.readyState === 4) {
-
-                            clearBoard("move_to_table");
-                            const resultObject = JSON.parse(httpRequest.response);
-                            const possibleMovesClear = resultObject.possibleMovesArray.clear;
-                            const possibleMovesEat = resultObject.possibleMovesArray.eat;
-                            const jaqueCoordinates = resultObject.jaqueCoordinates;
-                            const allEnemyPossibleAtacks = resultObject.AllEnemyPossibleAtacks;
-                            const validMove = resultObject.validMove;
-
-                            if (validMove) {
-                                for (let key in possibleMovesClear) {
-                                    let obj = possibleMovesClear[key];
-                                    let id = "" + obj[0] + obj[1];
-                                    document.getElementById(id).classList.add("possible");
-                                }
-
-                                for (let key in possibleMovesEat) {
-                                    let obj = possibleMovesEat[key];
-                                    let id = "" + obj[0] + obj[1];
-                                    document.getElementById(id).classList.add("eatable");
-                                }
-
-                                for (let key in allEnemyPossibleAtacks) {
-                                    let obj = allEnemyPossibleAtacks[key];
-                                    let id = "" + obj['coord'][0] + obj['coord'][1];
-                                    let pieza = document.querySelectorAll("[data-piece='" + obj['piece_id'] + "']")[0];
-                                    document.getElementById(id).classList.add("risk");
-                                }
-
-                                if (jaqueCoordinates.length > 0) {
-                                    let id = "" + jaqueCoordinates[0] + jaqueCoordinates[1];
-                                    document.getElementsByClassName('game-information')[0].innerHTML = "<label>Jaque</label>";
-                                    document.getElementById(id).classList.add("jaque");
-                                }
-
-                            } else {
-                                swal("It's other team turn!", "", "warning");
+                            for (let key in possibleMovesClear) {
+                                let obj = possibleMovesClear[key]
+                                let id = "" + obj[0] + obj[1]
+                                document.getElementById(id).classList.add("possible")
                             }
+
+                            for (let key in possibleMovesEat) {
+                                let obj = possibleMovesEat[key]
+                                let id = "" + obj[0] + obj[1]
+                                document.getElementById(id).classList.add("eatable")
+                            }
+
+                            for (let key in allEnemyPossibleAtacks) {
+                                let obj = allEnemyPossibleAtacks[key]
+                                let id = "" + obj['coord'][0] + obj['coord'][1]
+                                let pieza = document.querySelectorAll("[data-piece='" + obj['piece_id'] + "']")[0]
+                                document.getElementById(id).classList.add("risk")
+                            }
+                        } else {
+                            swal("It's other team turn!", "", "warning")
                         }
-                    };
+                    }
+                };
 
-                    httpRequest.open('POST', '{{ path('move_piece') }}')
-                    httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
-                    httpRequest.send('id_piece=' + id_piece)
-                } else {
-                    swal("Jaque", "", "warning");
-                }
-
-
+                httpRequest.open('POST', '{{ path('move_piece') }}')
+                httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+                httpRequest.send('id_piece=' + id_piece)
             }
 
-            function clearBoard(table, jaqueCoords = null) {
-                var row = document.getElementById('move_to_table').rows;
-                document.getElementsByClassName('game-information')[0].innerHTML = "";
-                var y;
+            function clearBoard(table) {
+                var row = document.getElementById('move_to_table').rows
+                var y
                 for (var i = 0; i < row.length; i++) {
                     for (var j = 0; j < row[i].cells.length; j++) {
-                        y = row[i].cells;
-                        y[j].classList.remove('possible', 'eatable', 'jaque', 'risk');
+                        y = row[i].cells
+                        y[j].classList.remove('possible', 'eatable', 'jaque', 'risk')
                     }
                 }
-
-                if (jaqueCoords != null) {
-
-                }
-
             }
 
 
             function setRowCol(row, col, id_piece, eatable) {
-
                 if (id_piece != "" && !eatable) {
                     document.getElementById('piece_id').value = id_piece;
-                    sendMove(id_piece);
-
+                    sendMove(id_piece)
                 } else {
-                    let id_celda = row + col;
-                    let celda = document.getElementById(id_celda);
+                    let id_celda = row + col
+                    let celda = document.getElementById(id_celda)
 
                     if (celda.classList.contains('possible') || celda.classList.contains('eatable')) {
-                        document.getElementById('row_to').value = row;
-                        document.getElementById('col_to').value = col;
-                        let id_piece = document.getElementById('piece_id').value;
-                        let row_to = document.getElementById('row_to').value;
-                        let col_to = document.getElementById('col_to').value;
-                        let pieza = document.querySelectorAll("[data-piece='" + id_piece + "']")[0];
+                        document.getElementById('row_to').value = row
+                        document.getElementById('col_to').value = col
+                        let id_piece = document.getElementById('piece_id').value
+                        let row_to = document.getElementById('row_to').value
+                        let col_to = document.getElementById('col_to').value
+                        let pieza = document.querySelectorAll("[data-piece='" + id_piece + "']")[0]
+                        let promoted = pieza.classList.contains("promoted") ? '1' : '0'
+                        let color = pieza.classList.contains("white") ? 'white' : 'black'
+                        promoted == 0 ? checkIfPromotable(id_piece, row_to, col_to, color) : ""
 
-                        let promoted = pieza.classList.contains("promoted") ? '1' : '0';
-                        let color = pieza.classList.contains("white") ? 'white' : 'black';
-                        promoted == 0 ? checkIfPromotable(id_piece, row_to, col_to, color) : "";
-
-                        makeMove(id_piece, row_to, col_to, eatable);
+                        makeMove(id_piece, row_to, col_to, eatable)
                     }
                 }
             }
 
-
             function isFetching(bool) {
-                var els = document.getElementsByClassName('is-fetching');
+                var els = document.getElementsByClassName('is-fetching')
                 Array.prototype.forEach.call(els, function (el) {
-                    bool == true ? el.style.opacity = "1" : el.style.opacity = "0";
+                    bool == true ? el.style.opacity = "1" : el.style.opacity = "0"
                 });
             }
 
             function checkIfPromotable(id_piece, row, col, color) {
-                let promotionAreaArray = promotionArea(color);
+                let promotionAreaArray = promotionArea(color)
                 if (checkIfExistCoordinate(promotionAreaArray, parseInt(row), parseInt(col))) {
-                    askIfPromotePiece(id_piece);
+                    askIfPromotePiece(id_piece)
                 }
             }
-
 
             function checkIfExistCoordinate(promotionAreaArray, row, col) {
                 for (var i = 0, len = promotionAreaArray.length; i < len; i++) {
                     if (promotionAreaArray[i][0] == row && promotionAreaArray[i][1] == col) {
-                        return true;
-                        break;
+                        return true
+                        break
                     }
                 }
                 return false;
             }
 
             function promotionArea(color) {
-                var arrayPromotionArea = null;
-                var allElements = [];
+                var arrayPromotionArea = null
+                var allElements = []
 
                 for (let i = 0; i < 9; i++) {
                     for (let j = 0; j < 9; j++) {
@@ -502,13 +470,13 @@
                 }
                 switch (color) {
                     case 'white':
-                        arrayPromotionArea = allElements.slice(54, 81);
+                        arrayPromotionArea = allElements.slice(54, 81)
                         break;
                     case 'black':
-                        arrayPromotionArea = allElements.slice(0, 27);
+                        arrayPromotionArea = allElements.slice(0, 27)
                         break;
                     default:
-                        arrayPromotionArea = [];
+                        arrayPromotionArea = []
                         break;
                 }
                 return arrayPromotionArea;
@@ -525,7 +493,7 @@
                 })
                     .then((willPromote) => {
                         if (willPromote) {
-                            promotePiece(id_piece);
+                            promotePiece(id_piece)
                         }
                     });
             }
@@ -535,8 +503,8 @@
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        const resultObject = JSON.parse(httpRequest.response);
-                        getMainBoard();
+                        const resultObject = JSON.parse(httpRequest.response)
+                        getMainBoard()
                     }
                 };
 
@@ -545,24 +513,23 @@
                 httpRequest.send('id_piece=' + id_piece)
             }
 
-
             function clickCell() {
                 var row = document.getElementById('move_to_table').rows;
                 for (var i = 0; i < row.length; i++) {
                     for (var j = 0; j < row[i].cells.length; j++) {
                         //console.log(row[i].cells[j].innerHTML);
                         row[i].cells[j].addEventListener('click', function (e) {
-                            let row = this.getAttribute("data-row");
-                            let col = this.getAttribute("data-col");
-                            let id_piece = this.getAttribute("data-piece");
-                            let eatable = this.classList.contains('eatable');
-                            const addFlag = document.getElementById('add_piece_flag');
-                            let addPieceFlagValue = addFlag.value;
+                            let row = this.getAttribute("data-row")
+                            let col = this.getAttribute("data-col")
+                            let id_piece = this.getAttribute("data-piece")
+                            let eatable = this.classList.contains('eatable')
+                            const addFlag = document.getElementById('add_piece_flag')
+                            let addPieceFlagValue = addFlag.value
 
                             if (addPieceFlagValue == 1) {
                                 addPieceback(row, col)
                             } else {
-                                setRowCol(row, col, id_piece, eatable);
+                                setRowCol(row, col, id_piece, eatable)
                             }
 
                         })

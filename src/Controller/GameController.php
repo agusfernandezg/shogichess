@@ -12,15 +12,6 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class GameController extends AbstractController
 {
-    /**
-     * @Route("/game", name="game")
-     */
-    public function index()
-    {
-        return $this->render('game/index.html.twig', [
-            'controller_name' => 'GameController',
-        ]);
-    }
 
     /**
      * @Route("/", name="chess")
@@ -51,7 +42,6 @@ class GameController extends AbstractController
 
 
     /**
-     * Generate all needes DBS for the game to work.
      * @Route("/getEatenPiecesJson", name="get_eaten_pieces_json")
      */
     function getEatenPiecesJson()
@@ -143,21 +133,18 @@ class GameController extends AbstractController
 
         if ($validMove) {
             $resultado = $this->getPiecePossibleMoves($piece);
-            $jaqueCoordinates = $this->jaqueCheck($piece, $resultado);
 
             return new JsonResponse([
                 'possibleMovesArray' => $resultado,
-                'jaqueCoordinates' => $jaqueCoordinates,
                 'validMove' => $validMove,
-                'colorTurn' => $colorTurn
+                'colorTurn' => ucfirst($colorTurn)
             ]);
         } else {
 
             return new JsonResponse([
                 'possibleMovesArray' => [],
-                'jaqueCoordinates' => [],
                 'validMove' => $validMove,
-                'colorTurn' => $colorTurn
+                'colorTurn' => ucfirst($colorTurn)
             ]);
         }
     }
@@ -200,7 +187,14 @@ class GameController extends AbstractController
         } else {
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
         }
-        return new JsonResponse();
+
+        $jaqueSituation = $this->jaqueCheck($piece);
+        $piece->getColor() === 'white' ? $colorTurn = 'Black' : $colorTurn = 'White';
+
+        return new JsonResponse([
+            'colorTurn' => $colorTurn,
+            'jaqueSituation' => $jaqueSituation
+        ]);
     }
 
 
@@ -216,12 +210,12 @@ class GameController extends AbstractController
             'row' => $row_to,
             'col' => $col_to,
         ]);
+
         $victimBitboard->setPieceDeleted(true);
         $entityManager->persist($victimBitboard);
         $entityManager->flush();
 
         $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
-
 
         return new JsonResponse();
     }
@@ -230,7 +224,6 @@ class GameController extends AbstractController
     public function undoMove($id_piece, $row_undo_eat, $col_undo_eat, $victimBitboard)
     {
         $entityManager = $this->getDoctrine()->getManager();
-        $request = $this->get('request_stack')->getCurrentRequest();
 
         //Get Piece
         $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
@@ -313,6 +306,8 @@ class GameController extends AbstractController
 
         $res = $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to, true);
 
+
+
         return new JsonResponse($res);
     }
 
@@ -384,45 +379,19 @@ class GameController extends AbstractController
 
 
     /**
-     * @Route("/checkJaque", name="check_jaque")
-     */
-    public function checkJaque()
-    {
-        $entityManager = $this->getDoctrine()->getManager();
-        $request = $this->get('request_stack')->getCurrentRequest();
-        $id_piece = $request->get('id_piece');
-        $validMove = false;
-
-        //Get Piece
-        $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
-        $resultado = $this->getPiecePossibleMoves($piece);
-        $jaqueCoordinates = $this->jaqueCheck($piece, $resultado);
-
-        $calculateMate = $this->calculateMate($piece);
-
-        return new JsonResponse([
-            'jaqueCoordinates' => $jaqueCoordinates,
-            'calculateMate' => $calculateMate
-        ]);
-    }
-
-
-    /**
      * Get the actual piece, create the atack board of the piece, and check if the king it's being atack by it.
      */
-    public function jaqueCheck($piece, $actualPieceMoves)
+    public function jaqueCheck($piece)
     {
-        $kingBitboard = $this->getKingBitboardByPieceColor($piece);
-        $coordinate = [$kingBitboard->getRow(), $kingBitboard->getCol()];
-        $jaqueCoord = array_search($coordinate, $actualPieceMoves['eat']);
+        $checkmate = $this->calculateMate($piece);
+        $color = $piece->getColor() == 'black' ? 'white' : 'black';
 
-        if ($jaqueCoord && isset($actualPieceMoves['eat'][$jaqueCoord])) {
+        return [
+            'color' => $color,
+            'jaque' => $checkmate['jaque'],
+            'checkmate' => $checkmate['mate'],
+        ];
 
-            $this->calculateMate($piece);
-            return $actualPieceMoves['eat'][$jaqueCoord];
-        } else {
-            return [];
-        }
     }
 
 
@@ -444,9 +413,9 @@ class GameController extends AbstractController
         }
 
         $piecesAtackingTheKing = $this->getPiecesThatAtackKingPossibleMovePositions($possibleKingMoves, $allPossibleAtacksCoordsOfTheEnemyMerged);
-        $this->switchMateCases($piecesAtackingTheKing, $piece);
+        $result = $this->switchMateCases($piecesAtackingTheKing, $piece);
 
-        return $piecesAtackingTheKing;
+        return $result;
     }
 
 
@@ -475,40 +444,48 @@ class GameController extends AbstractController
 
     function switchMateCases($piecesAtackingTheKing, $piece_actual)
     {
-        $simulatedMoves = [];
         $mate = false;
+        $jaque = false;
         $entityManager = $this->getDoctrine()->getManager();
         $canIEatThatDangerousPieces = [];
 
         //Free spaces that are not under atack and the king can move.
         $freeMoves = $piecesAtackingTheKing['freeMoves'];
 
-        //Moves that the king can do, but are under atach by other pieces.
+        //Moves that the king can do, but they are under attak by other pieces.
         $underAtack = $piecesAtackingTheKing['underAtack'];
+
+        if (count($underAtack) > 0) {
+            $jaque = true;
+        }
 
         //If the king have free moves, that are not under atack, there is no checkmate
         if (count($freeMoves) > 0) {
             $mate = false;
         } else {
-
             //If the king have no free moves, we will simulate what happens if we eat some of the pieces
             // that are avoiding the king to move
             if (count($underAtack) > 0) {
+                $jaque = true;
                 foreach ($underAtack as $atacker) {
                     $atacker_id = $atacker['piece_id'];
                     //Can I eat that piece?????
                     $canBeEatenByMe = $this->checkIfIcanEatAPiece($atacker_id);
+                    $break = false;
 
                     //If I can eat that piece, let's simulate what happens if I do so, one by one.
                     if (count($canBeEatenByMe) > 0) {
                         foreach ($canBeEatenByMe as $move) {
                             $piece_id = $move['piece_id'];
                             $coordMoveTo = $move['coord'];
+                            $break = false;
                             $piece = $entityManager->getRepository('App:Piece')->find($piece_id);
+
                             $pieceCurrentBitBoardBeforeMove = $entityManager->getRepository('App:Bitboard')->findOneBy([
                                 'piece' => $piece,
                                 'name' => 'current_position'
                             ]);
+
                             $victimBitboard = $entityManager->getRepository('App:Bitboard')->findOneBy([
                                 'name' => 'current_position',
                                 'row' => $coordMoveTo[0],
@@ -518,36 +495,31 @@ class GameController extends AbstractController
                             $coordMoveFrom = [$pieceCurrentBitBoardBeforeMove->getRow(), $pieceCurrentBitBoardBeforeMove->getCol()];
                             $this->makeMoveHere($piece_id, $coordMoveTo[0], $coordMoveTo[1]);
                             $result = $this->calculateMatePartial($piece_actual);
-                            array_push($canIEatThatDangerousPieces,$result);
+
+                            if (count($result['freeMoves']) > 0) {
+                                $mate = false;
+                                $break = true;
+                            }
+
                             $this->undoMove($piece_id, $coordMoveFrom[0], $coordMoveFrom[1], $victimBitboard);
+
+                            if ($break) {
+                                break;
+                            }
                         }
                     }
                 }
-
-                $resultado= $canIEatThatDangerousPieces;
-
+                $break ? $mate = false : $mate = true;
             }
 
         }
 
-
-        return $mate;
+        return [
+            'jaque' => $jaque,
+            'mate' => $mate
+        ];
     }
 
-
-    function simulateMove($piece_id)
-    {
-        $entityManager = $this->getDoctrine()->getManager();
-        $piece = $entityManager->getRepository('App:Piece')->find($piece_id);
-
-        //1 - Can any of my piece eat this piece?
-        $bitBoardCurrentPiecePosition = $entityManager->getRepository('App:Bitboard')->findOneBy([
-            'piece' => $piece,
-            'name' => 'current_position'
-        ]);
-
-        $bitBoardCurrentPiecePosition->setPieceDeleted(true);
-    }
 
     function checkIfIcanEatAPiece($piece_id)
     {
@@ -1460,18 +1432,6 @@ class GameController extends AbstractController
     }
 
 
-
-
-
-
-
-
-
-
-
-    /*******************************************************/
-
-
     /**
      *
      * Update all neede Db's after a move have being made
@@ -2255,7 +2215,7 @@ class GameController extends AbstractController
         } else {
             switch ($color) {
                 case('white'):
-                    isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = 1 : null;
+                    isset($matrixArray[$y + 1][$x]) ? $matrixArray[$y + 1][$x] = 1 : null;
                     break;
                 case('black'):
                     isset($matrixArray[$y - 1][$x]) ? $matrixArray[$y - 1][$x] = 1 : null;
