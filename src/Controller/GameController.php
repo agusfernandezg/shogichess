@@ -110,43 +110,60 @@ class GameController extends AbstractController
         $validMove = false;
         $colorTurn = "";
 
-        $history = $entityManager->getRepository('App:History')->findOneBy(
-            [],
-            ['date' => 'DESC']);
 
         //Get Piece
         $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
 
-        if ($history == null && $piece->getColor() == 'white') {
-            $validMove = true;
-            $colorTurn = "white";
-        } else if ($history == null && $piece->getColor() == 'black') {
-            $validMove = false;
-            $colorTurn = "white";
-        } else if ($history->getPiece()->getColor() == $piece->getColor()) {
-            $validMove = false;
-            $colorTurn = $piece->getColor() == 'black' ? 'black' : 'white';
-        } else {
-            $validMove = true;
-            $colorTurn = $piece->getColor();
-        }
+        $result = $this->generateHistoryAndValidateMove($piece);
 
-        if ($validMove) {
+        if ($result['validMove']) {
             $resultado = $this->getPiecePossibleMoves($piece);
 
             return new JsonResponse([
                 'possibleMovesArray' => $resultado,
-                'validMove' => $validMove,
-                'colorTurn' => ucfirst($colorTurn)
+                'validMove' => $result['validMove'],
+                'colorTurn' => ucfirst($result['colorTurn'])
             ]);
         } else {
 
             return new JsonResponse([
                 'possibleMovesArray' => [],
-                'validMove' => $validMove,
-                'colorTurn' => ucfirst($colorTurn)
+                'validMove' => $result['validMove'],
+                'colorTurn' => ucfirst($result['colorTurn'])
             ]);
         }
+    }
+
+
+    public function generateHistoryAndValidateMove($piece)
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+
+        $history = $entityManager->getRepository('App:History')->findOneBy(
+            [],
+            ['date' => 'DESC']);
+
+        $color = $piece->getColor();
+
+        if ($history == null && $color == 'white') {
+            $validMove = true;
+            $colorTurn = "white";
+        } else if ($history == null && $color == 'black') {
+            $validMove = false;
+            $colorTurn = "white";
+        } else if ($history->getPiece()->getColor() == $color) {
+            $validMove = false;
+            $colorTurn = $color == 'black' ? 'black' : 'white';
+        } else {
+            $validMove = true;
+            $colorTurn = $color;
+        }
+
+
+        return [
+            'validMove' => $validMove,
+            'colorTurn' => $colorTurn
+        ];
     }
 
 
@@ -298,17 +315,34 @@ class GameController extends AbstractController
 
         $piece = $entityManager->getRepository('App\Entity\Piece')->find($id_piece);
 
-        $actualColor = $piece->getColor();
-        $actualColor == 'white' ? $piece->setColor('black') : $piece->setColor('white');
-
-        $entityManager->persist($piece);
-        $entityManager->flush();
-
-        $res = $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to, true);
+        $result = $this->generateHistoryAndValidateMove($piece);
 
 
+        if ($result['validMove']) {
+            $actualColor = $piece->getColor();
+            $actualColor == 'white' ? $piece->setColor('black') : $piece->setColor('white');
 
-        return new JsonResponse($res);
+            $entityManager->persist($piece);
+            $entityManager->flush();
+
+            $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to, true);
+
+            $jaqueSituation = $this->jaqueCheck($piece);
+            $piece->getColor() === 'white' ? $colorTurn = 'Black' : $colorTurn = 'White';
+
+            return new JsonResponse([
+                'validMove' => $result['validMove'],
+                'colorTurn' => ucfirst($result['colorTurn']),
+                'jaqueSituation' => $jaqueSituation,
+            ]);
+
+        } else {
+            return new JsonResponse([
+                'validMove' => $result['validMove'],
+                'colorTurn' => ucfirst($result['colorTurn']),
+            ]);
+        }
+
     }
 
 

@@ -226,9 +226,23 @@
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
-                        const addFlag = document.getElementById('add_piece_flag')
-                        addFlag.value = 0
-                        getMainBoard()
+                        const resultObject = JSON.parse(httpRequest.response)
+                        const jaqueSituation = resultObject.jaqueSituation
+                        const colorTurn = resultObject.colorTurn
+                        const validMove = resultObject.validMove
+
+                        if (validMove) {
+                            updateTurn(colorTurn);
+                            updateCheckState(jaqueSituation);
+
+                            const addFlag = document.getElementById('add_piece_flag')
+                            addFlag.value = 0
+                            getMainBoard()
+
+                        } else {
+                            swal("It's other team turn!", "", "warning")
+                        }
+
                     }
                 };
 
@@ -313,19 +327,9 @@
                         const jaqueSituation = resultObject.jaqueSituation
                         const colorTurn = resultObject.colorTurn
 
-                        document.getElementById('turn').innerHTML = '<div class="alert alert-info" role="alert">' + colorTurn + ' team turn</div>';
+                        updateTurn(colorTurn);
+                        updateCheckState(jaqueSituation);
 
-                        if (jaqueSituation.hasOwnProperty('jaque')) {
-                            if (jaqueSituation.jaque) {
-                                if (jaqueSituation.checkmate) {
-                                    document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Checkmate to the ' + jaqueSituation.color + ' team </div>'
-                                } else {
-                                    document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Check to the ' + jaqueSituation.color + ' team</div>'
-                                }
-                            } else {
-                                document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = ''
-                            }
-                        }
                         getMainBoard();
                     }
                 };
@@ -511,6 +515,27 @@
                 httpRequest.open('POST', '{{ path('promote_piece') }}')
                 httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
                 httpRequest.send('id_piece=' + id_piece)
+            }
+
+
+            function updateCheckState(jaqueSituation) {
+
+                if (jaqueSituation.hasOwnProperty('jaque')) {
+                    if (jaqueSituation.jaque) {
+                        if (jaqueSituation.checkmate) {
+                            document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Checkmate to the ' + jaqueSituation.color + ' team </div>'
+                        } else {
+                            document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Check to the ' + jaqueSituation.color + ' team</div>'
+                        }
+                    } else {
+                        document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = ''
+                    }
+                }
+
+            }
+
+            function updateTurn(colorTurn) {
+                document.getElementById('turn').innerHTML = '<div class="alert alert-info" role="alert">' + colorTurn + ' team turn</div>';
             }
 
             function clickCell() {
