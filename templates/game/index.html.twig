@@ -77,12 +77,14 @@
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
+            margin: 10px;
         }
 
         #white_eaten {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
+            margin: 10px;
         }
 
         .white-eaten-piece {
@@ -142,15 +144,15 @@
                     <div class="col-4 info-column">
                         <div class="card">
                             <div class="card-header">
-                                Pieces captured by the Black Team
+                                Pieces captured by the White Team
                             </div>
                             <div class="card-body">
-                                <div id="black_eaten">
-                                    {{ eatenPieces.black | raw }}
+                                <div id="white_eaten">
+                                    {{ eatenPieces.white | raw }}
                                 </div>
                             </div>
                         </div>
-                        <div class="card text-center" style="width: 18rem;">
+                        <div class="card text-center" >
                             <div class="card-body">
                                 <h5 class="card-title">Game Information</h5>
                                 <p class="card-text" id="turn"></p>
@@ -160,11 +162,11 @@
                         </div>
                         <div class="card">
                             <div class="card-header">
-                                Pieces captured by the White Team
+                                Pieces captured by the Black Team
                             </div>
                             <div class="card-body">
-                                <div id="white_eaten">
-                                    {{ eatenPieces.white | raw }}
+                                <div id="black_eaten">
+                                    {{ eatenPieces.black | raw }}
                                 </div>
                             </div>
                         </div>
@@ -234,15 +236,14 @@
                         if (validMove) {
                             updateTurn(colorTurn);
                             updateCheckState(jaqueSituation);
-
                             const addFlag = document.getElementById('add_piece_flag')
                             addFlag.value = 0
                             getMainBoard()
 
                         } else {
+                            removeActive();
                             swal("It's other team turn!", "", "warning")
                         }
-
                     }
                 };
 
@@ -262,6 +263,15 @@
                     }
                 }
                 return piece_id
+            }
+
+            function removeActive() {
+                var lists = document.querySelectorAll(".eaten")
+                const addFlag = document.getElementById('add_piece_flag')
+                addFlag.value = 0
+                for (let el of lists) {
+                    el.classList.remove('active');
+                }
             }
 
 
@@ -508,6 +518,8 @@
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
                         const resultObject = JSON.parse(httpRequest.response)
+                        const jaqueSituation = resultObject.jaqueSituation
+                        updateCheckState(jaqueSituation)
                         getMainBoard()
                     }
                 };
@@ -519,11 +531,12 @@
 
 
             function updateCheckState(jaqueSituation) {
-
                 if (jaqueSituation.hasOwnProperty('jaque')) {
                     if (jaqueSituation.jaque) {
                         if (jaqueSituation.checkmate) {
+
                             document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Checkmate to the ' + jaqueSituation.color + ' team </div>'
+
                         } else {
                             document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Check to the ' + jaqueSituation.color + ' team</div>'
                         }
@@ -531,8 +544,8 @@
                         document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = ''
                     }
                 }
-
             }
+
 
             function updateTurn(colorTurn) {
                 document.getElementById('turn').innerHTML = '<div class="alert alert-info" role="alert">' + colorTurn + ' team turn</div>';

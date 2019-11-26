@@ -114,7 +114,7 @@ class GameController extends AbstractController
         //Get Piece
         $piece = $entityManager->getRepository('App:Piece')->find($id_piece);
 
-        $result = $this->generateHistoryAndValidateMove($piece);
+        $result = $this->validateTurn($piece);
 
         if ($result['validMove']) {
             $resultado = $this->getPiecePossibleMoves($piece);
@@ -135,7 +135,7 @@ class GameController extends AbstractController
     }
 
 
-    public function generateHistoryAndValidateMove($piece)
+    public function validateTurn($piece, $inverseColor = false)
     {
         $entityManager = $this->getDoctrine()->getManager();
 
@@ -143,7 +143,12 @@ class GameController extends AbstractController
             [],
             ['date' => 'DESC']);
 
-        $color = $piece->getColor();
+        if ($inverseColor) {
+            $color = $piece->getColor() == 'white' ? 'black' : 'white';
+        } else {
+            $color = $piece->getColor();
+        }
+
 
         if ($history == null && $color == 'white') {
             $validMove = true;
@@ -155,6 +160,7 @@ class GameController extends AbstractController
             $validMove = false;
             $colorTurn = $color == 'black' ? 'black' : 'white';
         } else {
+
             $validMove = true;
             $colorTurn = $color;
         }
@@ -197,6 +203,7 @@ class GameController extends AbstractController
                 'col' => $col_to,
             ]);
             $victimBitboard->setPieceDeleted(true);
+            $victimBitboard->setColor($piece->getColor());
             $entityManager->persist($victimBitboard);
             $entityManager->flush();
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
@@ -297,7 +304,12 @@ class GameController extends AbstractController
         $entityManager->persist($piece);
         $entityManager->flush();
 
-        return new JsonResponse($piece->getName());
+        $jaqueSituation = $this->jaqueCheck($piece);
+
+        return new JsonResponse([
+            'jaqueSituation' => $jaqueSituation,
+            'pieceName' => $piece->getName()
+        ]);
     }
 
 
@@ -315,14 +327,17 @@ class GameController extends AbstractController
 
         $piece = $entityManager->getRepository('App\Entity\Piece')->find($id_piece);
 
-        $result = $this->generateHistoryAndValidateMove($piece);
-
+        $result = $this->validateTurn($piece, true);
 
         if ($result['validMove']) {
-            $actualColor = $piece->getColor();
-            $actualColor == 'white' ? $piece->setColor('black') : $piece->setColor('white');
 
-            $entityManager->persist($piece);
+            $history = new History();
+            $history->setCellTo($row_to . $col_to);
+            $history->setPiece($piece);
+            $now = new \DateTime(date('Y-m-d H:i:s', time()));
+            $history->setDate($now);
+
+            $entityManager->persist($history);
             $entityManager->flush();
 
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to, true);
@@ -431,8 +446,10 @@ class GameController extends AbstractController
 
     public function calculateMate($piece)
     {
-        $kingBitboard = $this->getKingBitboardByPieceColor($piece)->getPiece();
-        $possibleKingMoves = $this->mergeEatAndCleanCoordsNormal($this->getPiecePossibleMoves($kingBitboard));
+        $kingBitboard = $this->getKingBitboardByPieceColor($piece);
+        $king = $kingBitboard->getPiece();
+
+        $possibleKingMoves = $this->mergeEatAndCleanCoordsNormal($this->getPiecePossibleMoves($king), $kingBitboard->getRow(), $kingBitboard->getCol());
 
         $allPossibleAtacksCoordsOfTheEnemy = $this->getAtackBoardByTeam($piece->getColor());
         $allPossibleAtacksCoordsOfTheEnemyMerged = [];
@@ -455,8 +472,9 @@ class GameController extends AbstractController
 
     public function calculateMatePartial($piece)
     {
-        $king = $this->getKingBitboardByPieceColor($piece)->getPiece();
-        $possibleKingMoves = $this->mergeEatAndCleanCoordsNormal($this->getPiecePossibleMoves($king));
+        $kingBitboard = $this->getKingBitboardByPieceColor($piece);
+        $king = $kingBitboard->getPiece();
+        $possibleKingMoves = $this->mergeEatAndCleanCoordsNormal($this->getPiecePossibleMoves($king), $kingBitboard->getRow(), $kingBitboard->getCol());
 
         $allPossibleAtacksCoordsOfTheEnemy = $this->getAtackBoardByTeam($piece->getColor());
         $allPossibleAtacksCoordsOfTheEnemyMerged = [];
@@ -589,7 +607,6 @@ class GameController extends AbstractController
     {
         $result = [];
         $freeMove = [];
-        $atackPieces = [];
 
         foreach ($kingMoves as $kingMove) {
             $flag = false;
@@ -625,7 +642,7 @@ class GameController extends AbstractController
         return $result;
     }
 
-    function mergeEatAndCleanCoordsNormal($array)
+    function mergeEatAndCleanCoordsNormal($array, $row_actual, $col_actual)
     {
         $result = [];
         $clear = $array['clear'];
@@ -638,6 +655,7 @@ class GameController extends AbstractController
         foreach ($eat as $ea) {
             array_push($result, $ea);
         }
+
 
         return $result;
     }
@@ -1360,6 +1378,7 @@ class GameController extends AbstractController
 
                 if (isset($pieceCurrentPositionBitboard) && $pieceCurrentPositionBitboard->getPiece()->getPromoted()) {
                     $promoted = 'promoted';
+                    $piece_first_letter = "+" . $piece_first_letter;
                 }
 
                 $matrixHtml .= "<td data-prom='" . $promoted . "' data-row='" . $i . "' data-col='" . $j . "' data-piece='" . $piece_id . "' id='" . $i . $j . "'  class='center cell " . $piece_color . " " . $promoted . " " . $underAtack . " " . $freeMove . "'>" . $piece_first_letter . "</td>";
