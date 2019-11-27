@@ -10,6 +10,14 @@
 {% block body %}
     <style>
 
+        .card {
+            border-color: #49cc90;
+        }
+
+        .card-header {
+            border-color: #49cc90;
+        }
+
         .container {
             background: aliceblue;
         }
@@ -77,14 +85,14 @@
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
-            margin: 10px;
+            margin: 15px;
         }
 
         #white_eaten {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
-            margin: 10px;
+            margin: 15px;
         }
 
         .white-eaten-piece {
@@ -113,7 +121,7 @@
         }
 
         .atack {
-            background: lawngreen !important;
+            background: #288690 !important;
         }
 
         .risk {
@@ -152,9 +160,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="card text-center" >
+                        <div class="card">
+
+
+                            <div class="card-header">
+                                Game Information
+                            </div>
                             <div class="card-body">
-                                <h5 class="card-title">Game Information</h5>
                                 <p class="card-text" id="turn"></p>
                                 <p class="card-text" id="white_king_in_check"></p>
                                 <p class="card-text" id="black_king_in_check"></p>
