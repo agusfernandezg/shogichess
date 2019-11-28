@@ -99,6 +99,34 @@ class GameController extends AbstractController
 
 
     /**
+     * @Route("/getAmountOfEatenPieces", name="get_amount_of_eaten_pieces")
+     */
+    function getAmountOfEatenPieces()
+    {
+        $entityManager = $this->getDoctrine()->getManager();
+        $whitePiecesArray = [];
+        $blackPiecesArray = [];
+        $eatenPieces = $entityManager->getRepository('App\Entity\Bitboard')->findBy(['pieceDeleted' => true]);
+
+        foreach ($eatenPieces as $bitboard) {
+            $piece_id = $bitboard->getPiece()->getId();
+            switch ($bitboard->getPiece()->getColor()) {
+                case 'white':
+                    array_push($whitePiecesArray, $piece_id);
+                    break;
+                case 'black':
+                    array_push($blackPiecesArray, $piece_id);
+                    break;
+            }
+        }
+        return new JsonResponse([
+            'white' => count($whitePiecesArray),
+            'black' => count($blackPiecesArray),
+        ]);
+    }
+
+
+    /**
      * Esta función, diciendole de que pieza se trata, me dice que movimientos puedo hacer
      * @Route("/movePiece", name="move_piece")
      */
@@ -204,7 +232,9 @@ class GameController extends AbstractController
             ]);
             $victimBitboard->setPieceDeleted(true);
             $victimBitboard->setColor($piece->getColor());
+            $victimPiece = $victimBitboard->getPiece()->setColor($piece->getColor());
             $entityManager->persist($victimBitboard);
+            $entityManager->persist($victimPiece);
             $entityManager->flush();
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to);
 
@@ -327,7 +357,7 @@ class GameController extends AbstractController
 
         $piece = $entityManager->getRepository('App\Entity\Piece')->find($id_piece);
 
-        $result = $this->validateTurn($piece, true);
+        $result = $this->validateTurn($piece, false);
 
         if ($result['validMove']) {
 
@@ -342,7 +372,7 @@ class GameController extends AbstractController
 
             $this->generateAllBitBoardsAfterPieceMove($piece, $row_to, $col_to, true);
 
-            $jaqueSituation = $this->jaqueCheck($piece);
+            $jaqueSituation = $this->jaqueCheck($piece, true);
             $piece->getColor() === 'white' ? $colorTurn = 'Black' : $colorTurn = 'White';
 
             return new JsonResponse([
@@ -411,18 +441,31 @@ class GameController extends AbstractController
     }
 
 
-    function getKingBitboardByPieceColor($piece)
+    function getKingBitboardByPieceColor($piece, $addPiece = false)
     {
         $entityManager = $this->getDoctrine()->getManager();
         //Get Own Pieces BitBoard
-        switch ($piece->getColor()) {
-            case 'white':
-                $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('black')->getQuery()->execute()[0];
-                break;
-            case'black':
-                $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('white')->getQuery()->execute()[0];
-                break;
+
+        if ($addPiece) {
+            switch ($piece->getColor()) {
+                case 'white':
+                    $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('white')->getQuery()->execute()[0];
+                    break;
+                case'black':
+                    $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('black')->getQuery()->execute()[0];
+                    break;
+            }
+        } else {
+            switch ($piece->getColor()) {
+                case 'white':
+                    $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('black')->getQuery()->execute()[0];
+                    break;
+                case'black':
+                    $kingBitboard = $entityManager->getRepository('App:Bitboard')->getKing('white')->getQuery()->execute()[0];
+                    break;
+            }
         }
+
         return $kingBitboard;
     }
 
@@ -430,10 +473,16 @@ class GameController extends AbstractController
     /**
      * Get the actual piece, create the atack board of the piece, and check if the king it's being atack by it.
      */
-    public function jaqueCheck($piece)
+    public function jaqueCheck($piece, $addPiece = false)
     {
-        $checkmate = $this->calculateMate($piece);
-        $color = $piece->getColor() == 'black' ? 'white' : 'black';
+        $checkmate = $this->calculateMate($piece, $addPiece);
+
+        if ($addPiece) {
+            $color = $piece->getColor() == 'black' ? 'black' : 'white';
+        } else {
+            $color = $piece->getColor() == 'black' ? 'white' : 'black';
+        }
+
 
         return [
             'color' => $color,
@@ -444,14 +493,20 @@ class GameController extends AbstractController
     }
 
 
-    public function calculateMate($piece)
+    public function calculateMate($piece, $addPiece = false)
     {
-        $kingBitboard = $this->getKingBitboardByPieceColor($piece);
+        $kingBitboard = $this->getKingBitboardByPieceColor($piece, $addPiece);
         $king = $kingBitboard->getPiece();
 
         $possibleKingMoves = $this->mergeEatAndCleanCoordsNormal($this->getPiecePossibleMoves($king), $kingBitboard->getRow(), $kingBitboard->getCol());
 
-        $allPossibleAtacksCoordsOfTheEnemy = $this->getAtackBoardByTeam($piece->getColor());
+        if ($addPiece) {
+            $color = $piece->getColor() === 'white' ? 'black' : 'white';
+        } else {
+            $color = $piece->getColor();
+        }
+
+        $allPossibleAtacksCoordsOfTheEnemy = $this->getAtackBoardByTeam($color);
         $allPossibleAtacksCoordsOfTheEnemyMerged = [];
 
         //I get all the possible atacks of the enemy
@@ -1775,7 +1830,7 @@ class GameController extends AbstractController
             $checkIfAlreadyExiste->setRow($row);
             $checkIfAlreadyExiste->setCol($col);
             $checkIfAlreadyExiste->setName("current_position");
-            $checkIfAlreadyExiste->setColor($piece->getColor());
+            $insert == true ? "" : $checkIfAlreadyExiste->setColor($piece->getColor());
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
 
             $stringArrayBitBoard = implode($bitBoardArray);
@@ -1798,7 +1853,7 @@ class GameController extends AbstractController
             $bitBoardPieceActualPosition->setRow($row);
             $bitBoardPieceActualPosition->setCol($col);
             $bitBoardPieceActualPosition->setName("current_position");
-            $bitBoardPieceActualPosition->setColor($piece->getColor());
+            $insert == true ? "" : $bitBoardPieceActualPosition->setColor($piece->getColor());
             $bitBoardArray = $this->fromMatrixToBitboard($matrix, 9, 9);
             $stringArrayBitBoard = implode($bitBoardArray);
 

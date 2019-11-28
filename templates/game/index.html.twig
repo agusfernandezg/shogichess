@@ -161,8 +161,6 @@
                             </div>
                         </div>
                         <div class="card">
-
-
                             <div class="card-header">
                                 Game Information
                             </div>
@@ -247,11 +245,11 @@
 
                         if (validMove) {
                             updateTurn(colorTurn);
-                            updateCheckState(jaqueSituation);
                             const addFlag = document.getElementById('add_piece_flag')
                             addFlag.value = 0
                             getMainBoard()
 
+                            updateCheckState(jaqueSituation);
                         } else {
                             removeActive();
                             swal("It's other team turn!", "", "warning")
@@ -315,7 +313,7 @@
                         const main_board = document.getElementById('main_board')
                         main_board.innerHTML = resultObject.board
                         clickCell()
-                        getEatablePieces()
+                        getEatenPieces()
                     }
                 };
                 httpRequest.open('POST', '{{ path('get_main_board') }}')
@@ -361,7 +359,7 @@
             }
 
 
-            function getEatablePieces() {
+            function getEatenPieces() {
                 var httpRequest = new XMLHttpRequest()
                 httpRequest.onreadystatechange = function (data) {
                     if (httpRequest.readyState === 4) {
@@ -378,6 +376,24 @@
                 httpRequest.open('POST', '{{ path('get_eaten_pieces_json') }}')
                 httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
                 httpRequest.send('')
+            }
+
+
+            function getEatePiecesAfterChekMate() {
+
+                return new Promise(resolve => {
+                    var httpRequest = new XMLHttpRequest()
+                    httpRequest.open('POST', '{{ path('get_amount_of_eaten_pieces') }}')
+                    httpRequest.onload = function (e) {
+                        resolve(httpRequest.response);
+                    };
+                    httpRequest.onerror = function () {
+                        resolve(undefined);
+                    };
+                    httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+                    httpRequest.send('')
+
+                });
             }
 
 
@@ -535,7 +551,6 @@
                         getMainBoard()
                     }
                 };
-
                 httpRequest.open('POST', '{{ path('promote_piece') }}')
                 httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
                 httpRequest.send('id_piece=' + id_piece)
@@ -547,7 +562,22 @@
                     if (jaqueSituation.jaque) {
                         if (jaqueSituation.checkmate) {
 
-                            document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Checkmate to the ' + jaqueSituation.color + ' team </div>'
+                            const colorTeamInJaque = jaqueSituation.color === 'white' ? 'white' : 'black';
+
+                            getEatePiecesAfterChekMate().then(function (result) {
+
+                                const resultObject = JSON.parse(result)
+                                console.log(colorTeamInJaque);
+                                console.log(resultObject[colorTeamInJaque]);
+                                if (resultObject[colorTeamInJaque] === 0) {
+                                    blockAfterCheckMate(colorTeamInJaque, false);
+                                } else {
+                                    blockAfterCheckMate(colorTeamInJaque, true);
+                                }
+
+                            }, function (err) {
+                                console.log(err); // Error: "It broke"
+                            });
 
                         } else {
                             document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Check to the ' + jaqueSituation.color + ' team</div>'
@@ -556,6 +586,30 @@
                         document.getElementById(`${jaqueSituation.color}_king_in_check`).innerHTML = ''
                     }
                 }
+            }
+
+            function blockAfterCheckMate(teamColor, stillPieces) {
+                let message = "";
+                stillPieces === true ? message = `${teamColor} team you still have pieces, try to introduce one to the game and see what happens` : message = `${teamColor} you loose the game`;
+
+                document.getElementById(`${teamColor}_king_in_check`).innerHTML = '<div class="alert alert-danger" role="alert"> Checkmate to the ' + teamColor + ' team </div>'
+                swal({
+                    title: message,
+                    text: "¿Do you want to restart the game, or continue playing?",
+                    icon: "warning",
+                    dangerMode: true,
+                    buttons: ["Continue Game!", "Restart Game!"],
+                })
+                    .then((willPromote) => {
+                        if (willPromote) {
+                            resetBoardDbs()
+                            const whiteEatenDiv = document.getElementById('white_eaten');
+                            whiteEatenDiv.innerHTML = ""
+                            const blackEatenDiv = document.getElementById('black_eaten');
+                            blackEatenDiv.innerHTML = ""
+                        }
+                    });
+
             }
 
 
