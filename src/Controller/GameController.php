@@ -193,7 +193,6 @@ class GameController extends AbstractController
             $colorTurn = $color;
         }
 
-
         return [
             'validMove' => $validMove,
             'colorTurn' => $colorTurn
