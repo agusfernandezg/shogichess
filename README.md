@@ -32,3 +32,6 @@
 5. Finalmente, ejecutar: **php bin/console server:run**
 
 
+**Pruebas Unitarias**
+
+Comando: ./bin/phpunit

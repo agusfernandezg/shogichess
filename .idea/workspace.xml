@@ -152,6 +152,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="SONARLINT_PRECOMMIT_ANALYSIS" value="true" />
     <property name="WebServerToolWindowFactoryState" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
@@ -247,26 +248,30 @@
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
     <state x="167" y="127" width="1653" height="853" key="#com.intellij.execution.junit2.states.ComparisonFailureState$DiffDialog/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575220624721" />
+    <state x="558" y="150" width="860" height="807" key="CommitChangelistDialog2" timestamp="1575222815245">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="558" y="150" width="860" height="807" key="CommitChangelistDialog2/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575222815245" />
     <state x="771" y="311" width="424" height="484" key="FileChooserDialogImpl" timestamp="1575219677544">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
     <state x="771" y="311" width="424" height="484" key="FileChooserDialogImpl/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575219677544" />
-    <state width="1807" height="285" key="GridCell.Tab.0.bottom" timestamp="1575222745097">
+    <state width="1807" height="285" key="GridCell.Tab.0.bottom" timestamp="1575222817776">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="285" key="GridCell.Tab.0.bottom/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575222745097" />
-    <state width="1807" height="285" key="GridCell.Tab.0.center" timestamp="1575222745096">
+    <state width="1807" height="285" key="GridCell.Tab.0.bottom/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575222817776" />
+    <state width="1807" height="285" key="GridCell.Tab.0.center" timestamp="1575222817775">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="285" key="GridCell.Tab.0.center/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575222745096" />
-    <state width="1807" height="285" key="GridCell.Tab.0.left" timestamp="1575222745096">
+    <state width="1807" height="285" key="GridCell.Tab.0.center/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575222817775" />
+    <state width="1807" height="285" key="GridCell.Tab.0.left" timestamp="1575222817775">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="285" key="GridCell.Tab.0.left/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575222745096" />
-    <state width="1807" height="285" key="GridCell.Tab.0.right" timestamp="1575222745097">
+    <state width="1807" height="285" key="GridCell.Tab.0.left/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575222817775" />
+    <state width="1807" height="285" key="GridCell.Tab.0.right" timestamp="1575222817776">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="285" key="GridCell.Tab.0.right/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575222745097" />
+    <state width="1807" height="285" key="GridCell.Tab.0.right/67.27.1853.1053/1920.0.1920.1080@67.27.1853.1053" timestamp="1575222817776" />
     <state width="1807" height="679" key="GridCell.Tab.1.bottom" timestamp="1575222541781">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
